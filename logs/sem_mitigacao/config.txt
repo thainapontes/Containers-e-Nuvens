@@ -1,0 +1,6 @@
+data: 2026-11-18T18:00:25Z
+RUN_ID=sem_mitigacao
+MITIGACAO=off
+SEED=42
+Docker version 29.7.2, build a7dcaa6
+Docker Compose version v5.5.1

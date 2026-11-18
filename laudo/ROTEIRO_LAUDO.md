@@ -93,12 +93,12 @@ a cada 3 s, contra 5 min no caso real.
 
 | Métrica | Miniatura | Fonte (log) | Caso real | Fonte (artigo) |
 |---|---|---|---|---|
-| Tempo até a falha (mudança → 1º erro) | [ ] s | `logs/sem_mitigacao/metricas.txt` | 11:05 → 11:28 (23 min) | Tabela final |
-| Tempo até a falha (1º arquivo ruim → 1º erro) | [ ] s | idem | não informado | — |
-| Tempo até a recuperação (arquivo bom de volta → último erro) | [ ] s | idem | 14:24 → 14:30 (impacto principal); até 17:06 para tudo | Tabela final |
-| Duração do impacto | [ ] s | idem | 11:28 → 14:30 | Tabela final |
-| % de requisições com erro | [ ] % | idem | não informado em número (só o gráfico de 5xx) | Seção "The outage" |
-| Número de oscilações (blocos de erro) | [ ] | idem | "recuperava por um período" e voltava a falhar | Seção "The outage" |
+| Tempo até a falha (mudança → 1º erro) | 7.10 s | `logs/sem_mitigacao/metricas.txt` | 11:05 → 11:28 (23 min) | Tabela final |
+| Tempo até a falha (1º arquivo ruim → 1º erro) | 0.95 s | idem | não informado | — |
+| Tempo até a recuperação (arquivo bom de volta → último erro) | 0.16 s | idem | 14:24 → 14:30 (impacto principal); até 17:06 para tudo | Tabela final |
+| Duração do impacto | 38.09 s | idem | 11:28 → 14:30 | Tabela final |
+| % de requisições com erro | 40.07 % | idem | não informado em número (só o gráfico de 5xx) | Seção "The outage" |
+| Número de oscilações (blocos de erro) | 3 | idem | "recuperava por um período" e voltava a falhar | Seção "The outage" |
 
 **Comparação.** _(Escrever: o que bateu (oscilação, propagação rápida), o que não bate e por
 quê, usando a tabela de limitações.)_
@@ -128,9 +128,9 @@ corretiva do artigo.
 
 | Métrica | Sem mitigação | Com mitigação | Fonte |
 |---|---|---|---|
-| % de requisições com erro | [ ] | [ ] | `logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt` |
-| Requisições com erro | [ ] | [ ] | idem |
-| Eventos `PANICO` | [ ] | [ ] | idem |
-| Arquivos `REJEITADOS` | [ ] | [ ] | idem |
+| % de requisições com erro | 40.07 % | 0.00 % | `logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt` |
+| Requisições com erro | 321 | 0 | idem |
+| Eventos `PANICO` | 11 | 0 | idem |
+| Arquivos `REJEITADOS` | 0 | 11 | idem |
 
 **Recomendação final.** _(2 ou 3 frases para a diretora.)_

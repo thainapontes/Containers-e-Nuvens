@@ -1,0 +1,88 @@
+ Network containers-e-nuvens-1_interna Creating 
+ Network containers-e-nuvens-1_publica Creating 
+ Network containers-e-nuvens-1_interna Creating 
+ Network containers-e-nuvens-1_publica Creating 
+ Network containers-e-nuvens-1_publica Created 
+ Network containers-e-nuvens-1_publica Created 
+ Network containers-e-nuvens-1_interna Created 
+ Network containers-e-nuvens-1_interna Created 
+ Container containers-e-nuvens-1-gerador-1 Creating 
+ Container containers-e-nuvens-1-gerador-1 Created 
+ Container containers-e-nuvens-1-proxy-1 Creating 
+ Container containers-e-nuvens-1-proxy-1 Created 
+ Container containers-e-nuvens-1-cliente-1 Creating 
+ Container containers-e-nuvens-1-cliente-1 Created 
+Attaching to cliente-1, gerador-1, proxy-1
+ Container containers-e-nuvens-1-gerador-1 Starting 
+ Container containers-e-nuvens-1-gerador-1 Started 
+ Container containers-e-nuvens-1-gerador-1 Waiting 
+gerador-1  | 1795024945.146 INICIO n_features=120 n_nos=5 t_mudanca=15.0 passo_rollout=6.0 intervalo=3.0 t_rollback=60.0 seed=42
+gerador-1  | 1795024945.166 PUBLICADO versao=1 n=120 no=0 tipo=bom
+ Container containers-e-nuvens-1-gerador-1 Healthy 
+ Container containers-e-nuvens-1-proxy-1 Starting 
+ Container containers-e-nuvens-1-proxy-1 Started 
+ Container containers-e-nuvens-1-proxy-1 Waiting 
+proxy-1    | 1795024947.695 INICIO limite=200 mitigacao=on poll=1.0
+proxy-1    | 1795024947.716 CARREGADO versao=1 n=120
+gerador-1  | 1795024948.182 PUBLICADO versao=2 n=120 no=0 tipo=bom
+proxy-1    | 1795024948.722 CARREGADO versao=2 n=120
+ Container containers-e-nuvens-1-proxy-1 Healthy 
+ Container containers-e-nuvens-1-cliente-1 Starting 
+ Container containers-e-nuvens-1-cliente-1 Started 
+gerador-1  | 1795024951.204 PUBLICADO versao=3 n=120 no=0 tipo=bom
+proxy-1    | 1795024951.736 CARREGADO versao=3 n=120
+gerador-1  | 1795024954.222 PUBLICADO versao=4 n=120 no=2 tipo=bom
+proxy-1    | 1795024954.749 CARREGADO versao=4 n=120
+gerador-1  | 1795024957.238 PUBLICADO versao=5 n=120 no=1 tipo=bom
+proxy-1    | 1795024957.764 CARREGADO versao=5 n=120
+gerador-1  | 1795024960.153 MUDANCA_INICIADA t=15.0
+gerador-1  | 1795024960.163 NO_ATUALIZADO no=0 atualizados=1/5
+gerador-1  | 1795024960.272 PUBLICADO versao=6 n=120 no=1 tipo=bom
+proxy-1    | 1795024960.779 CARREGADO versao=6 n=120
+gerador-1  | 1795024963.282 PUBLICADO versao=7 n=120 no=1 tipo=bom
+proxy-1    | 1795024963.793 CARREGADO versao=7 n=120
+gerador-1  | 1795024966.197 NO_ATUALIZADO no=1 atualizados=2/5
+gerador-1  | 1795024966.309 PUBLICADO versao=8 n=240 no=0 tipo=ruim
+proxy-1    | 1795024966.807 REJEITADO versao=8 n=240 limite=200 mantendo_versao=7
+gerador-1  | 1795024969.329 PUBLICADO versao=9 n=120 no=4 tipo=bom
+proxy-1    | 1795024969.824 CARREGADO versao=9 n=120
+gerador-1  | 1795024972.227 NO_ATUALIZADO no=2 atualizados=3/5
+gerador-1  | 1795024972.331 PUBLICADO versao=10 n=240 no=0 tipo=ruim
+proxy-1    | 1795024972.839 REJEITADO versao=10 n=240 limite=200 mantendo_versao=9
+gerador-1  | 1795024975.346 PUBLICADO versao=11 n=120 no=4 tipo=bom
+proxy-1    | 1795024975.855 CARREGADO versao=11 n=120
+gerador-1  | 1795024978.261 NO_ATUALIZADO no=3 atualizados=4/5
+gerador-1  | 1795024978.369 PUBLICADO versao=12 n=240 no=3 tipo=ruim
+proxy-1    | 1795024978.872 REJEITADO versao=12 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024981.391 PUBLICADO versao=13 n=240 no=0 tipo=ruim
+proxy-1    | 1795024981.886 REJEITADO versao=13 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024984.304 NO_ATUALIZADO no=4 atualizados=5/5
+gerador-1  | 1795024984.409 PUBLICADO versao=14 n=240 no=0 tipo=ruim
+proxy-1    | 1795024984.899 REJEITADO versao=14 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024987.422 PUBLICADO versao=15 n=240 no=0 tipo=ruim
+proxy-1    | 1795024987.933 REJEITADO versao=15 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024990.441 PUBLICADO versao=16 n=240 no=1 tipo=ruim
+proxy-1    | 1795024990.944 REJEITADO versao=16 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024993.457 PUBLICADO versao=17 n=240 no=1 tipo=ruim
+proxy-1    | 1795024993.959 REJEITADO versao=17 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024996.472 PUBLICADO versao=18 n=240 no=4 tipo=ruim
+proxy-1    | 1795024996.973 REJEITADO versao=18 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795024999.487 PUBLICADO versao=19 n=240 no=4 tipo=ruim
+proxy-1    | 1795024999.992 REJEITADO versao=19 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795025002.506 PUBLICADO versao=20 n=240 no=0 tipo=ruim
+proxy-1    | 1795025003.008 REJEITADO versao=20 n=240 limite=200 mantendo_versao=11
+gerador-1  | 1795025005.169 PUBLICADO versao=21 n=120 no=- tipo=bom motivo=rollback
+gerador-1  | 1795025005.174 ROLLBACK t=60.0
+gerador-1  | 1795025005.178 GERACAO_PARADA
+proxy-1    | 1795025006.022 CARREGADO versao=21 n=120
+cliente-1  | cliente terminou: /logs/cliente.csv
+[Kcliente-1 exited with code 0
+ Compose Stopping Aborting on container exit...
+ Container containers-e-nuvens-1-cliente-1 Stopping 
+ Container containers-e-nuvens-1-cliente-1 Stopped 
+ Container containers-e-nuvens-1-proxy-1 Stopping 
+ Container containers-e-nuvens-1-proxy-1 Stopped 
+ Container containers-e-nuvens-1-gerador-1 Stopping 
+[Kproxy-1 exited with code 137
+ Container containers-e-nuvens-1-gerador-1 Stopped 
+[Kgerador-1 exited with code 137

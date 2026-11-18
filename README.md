@@ -16,8 +16,8 @@ arquivo bom e arquivo ruim antes de falhar de vez.
 ## Passo a passo
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
-cd <pasta>
+git clone https://github.com/thainapontes/Containers-e-Nuvens
+cd Containers-e-Nuvens
 
 # 1) Reproduzir a falha (cerca de 1 minuto e meio)
 ./rodar.sh sem_mitigacao off
