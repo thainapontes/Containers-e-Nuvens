@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Laudo: incidente Cloudflare 18/11/2025</title>
+<style>
+  @page { size: A4; margin: 16mm 16mm 16mm 16mm; }
+  :root { --ink:#1b1f24; --muted:#59636e; --line:#d0d7de; --head:#f3f5f7; --accent:#b4441b; }
+  html { background:#fff; }
+  body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10pt; line-height: 1.38; color: var(--ink); margin: 0; }
+  h1 { font-size: 16pt; margin: 0 0 2pt; }
+  h2 { font-size: 12.5pt; margin: 13pt 0 5pt; padding-bottom: 2pt; border-bottom: 1.5px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 10.5pt; margin: 9pt 0 3pt; break-after: avoid; }
+  p { margin: 0 0 6pt; text-align: justify; }
+  .meta { color: var(--muted); font-size: 9pt; margin-bottom: 8pt; }
+  table { width: 100%; border-collapse: collapse; margin: 3pt 0 8pt; font-size: 8.8pt; break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 3pt 5pt; vertical-align: top; text-align: left; }
+  th { background: var(--head); }
+  td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 8.6pt; background: #f3f5f7; padding: 0 2px; border-radius: 2px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 8.3pt; background: #f6f8fa; border: 1px solid var(--line); padding: 5pt 7pt; margin: 3pt 0 7pt; white-space: pre-wrap; break-inside: avoid; }
+  blockquote { margin: 3pt 0 7pt; padding: 2pt 8pt; border-left: 3px solid var(--line); color: #333; font-size: 9pt; }
+  .fig { text-align: center; margin: 4pt 0 6pt; break-inside: avoid; }
+  .cap { font-size: 8.5pt; color: var(--muted); text-align: center; margin-top: 2pt; }
+  .src { color: var(--muted); font-size: 8.3pt; }
+</style>
+</head>
+<body>
+
+<h1>Laudo técnico: incidente da Cloudflare de 18/11/2025</h1>
+<div class="meta">Disciplina de Containers e Nuvem · Equipe de SRE ·
+Repositório: <code>https://github.com/thainapontes/Containers-e-Nuvens</code><br>
+Fonte: Cloudflare, “Cloudflare outage on November 18, 2025”,
+https://blog.cloudflare.com/18-november-2025-outage/ (horários em UTC). Citações do artigo
+em inglês, como no original.</div>
+
+<h2>Parte A — O mecanismo</h2>
+
+<p><b>Mecanismo em uma frase.</b> Uma mudança de permissões no ClickHouse fez a consulta que gera
+o <i>feature file</i> do Bot Management devolver linhas duplicadas. O arquivo dobrou de tamanho e
+passou do limite fixo de 200 features pré-alocado no proxy. O código do proxy entrou em pânico e,
+como o proxy fica no caminho de todo o tráfego, a rede passou a responder 5xx.</p>
+
+<p>O artigo descreve o limite na seção <i>Memory preallocation</i>: “Currently that limit is set to
+200, well above our current use of ~60 features.” O pânico aparece na mesma seção:
+<code>thread fl2_worker_thread panicked: called Result::unwrap() on an Err value</code>.</p>
+
+<h3>Linha do tempo</h3>
+<table>
+<tr><th style="width:13%">Horário (UTC)</th><th>Evento</th><th style="width:33%">Onde está no artigo</th></tr>
+<tr><td class="n">11:05</td><td>Mudança de controle de acesso no banco é implantada.</td><td>Tabela final, linha 11:05 (“Database access control change deployed.”); seção <i>The query behaviour change</i></td></tr>
+<tr><td class="n">11:28</td><td>A mudança chega aos ambientes de clientes; primeiros erros no tráfego HTTP. A introdução diz que as falhas começaram às 11:20; usamos 11:28, o horário da tabela (“Impact starts.”).</td><td>Tabela final, linha 11:28; introdução (11:20)</td></tr>
+<tr><td class="n">sem horário</td><td>O sistema alterna entre falha e recuperação. O arquivo é gerado a cada cinco minutos num cluster ClickHouse em atualização gradual, e só sai ruim quando a consulta roda num nó já atualizado.</td><td>Seção <i>The outage</i></td></tr>
+<tr><td class="n">14:24</td><td>Geração e propagação de novos arquivos de configuração do Bot Management são interrompidas.</td><td>Tabela final, linha 14:24</td></tr>
+<tr><td class="n">14:30</td><td>Arquivo correto implantado globalmente; impacto principal resolvido.</td><td>Tabela final, linha 14:30</td></tr>
+<tr><td class="n">17:06</td><td>Todos os serviços restaurados; fim do impacto.</td><td>Tabela final, linha 17:06</td></tr>
+</table>
+
+<h3>Conceito da disciplina: ponto único de falha</h3>
+<p>O <i>feature file</i> é um único artefato. Ele é gerado em um único lugar e propagado para
+todas as máquinas da rede. Todas rodam o mesmo código com o mesmo limite fixo, então não há
+diversidade: um único arquivo inválido derruba o tráfego no mundo inteiro. Milhares de servidores
+redundantes não ajudam quando todos dependem da mesma entrada e falham pela mesma razão. Por isso
+o arquivo de configuração, e não um servidor, é o ponto único de falha. O artigo reconhece isso na
+seção <i>Remediation and follow-up steps</i>, cujo primeiro item é: “Hardening ingestion of
+Cloudflare-generated configuration files in the same way we would for user-generated input”.</p>
+<p><b>Conceito secundário: consistência.</b> Durante a atualização gradual, nós diferentes do
+cluster davam respostas diferentes para a mesma consulta. Por isso o sistema oscilava entre falha e
+recuperação, e a equipe da Cloudflare a princípio suspeitou de um ataque DDoS (introdução:
+“we initially wrongly suspected the symptoms we were seeing were caused by a hyper-scale DDoS
+attack”).</p>
+
+<h2>Parte B — A miniatura</h2>
+
+<div class="fig">
+<svg viewBox="0 0 720 210" width="100%" style="max-width:680px" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif" font-size="12">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#1b1f24"/></marker></defs>
+  <rect x="8" y="22" width="372" height="180" rx="8" fill="#eef4fb" stroke="#6b8fb8" stroke-dasharray="5 4"/>
+  <text x="18" y="40" fill="#2f5a87" font-weight="600">rede "interna" (internal: true) — plano de controle</text>
+  <rect x="330" y="10" width="382" height="192" rx="8" fill="#fbf1ec" stroke="#c07a57" stroke-dasharray="5 4" fill-opacity="0.55"/>
+  <text x="520" y="28" fill="#93492a" font-weight="600" text-anchor="middle">rede "publica" — plano de dados</text>
+  <rect x="28" y="70" width="170" height="110" rx="6" fill="#fff" stroke="#1b1f24"/>
+  <text x="113" y="90" text-anchor="middle" font-weight="700">gerador</text>
+  <text x="113" y="108" text-anchor="middle" font-size="10.5">ClickHouse + job do feature file</text>
+  <text x="113" y="124" text-anchor="middle" font-size="10.5">5 nós; 1 atualizado a cada 6 s</text>
+  <text x="113" y="140" text-anchor="middle" font-size="10.5">novo arquivo a cada 3 s</text>
+  <text x="113" y="156" text-anchor="middle" font-size="10.5">GET /features.json :8000</text>
+  <text x="113" y="172" text-anchor="middle" font-size="10.5">gerador.log</text>
+  <rect x="268" y="70" width="170" height="110" rx="6" fill="#fff" stroke="#1b1f24" stroke-width="1.8"/>
+  <text x="353" y="90" text-anchor="middle" font-weight="700">proxy</text>
+  <text x="353" y="108" text-anchor="middle" font-size="10.5">FL2 + Bot Management</text>
+  <text x="353" y="124" text-anchor="middle" font-size="10.5">limite pré-alocado = 200</text>
+  <text x="353" y="140" text-anchor="middle" font-size="10.5">MITIGACAO = off | on</text>
+  <text x="353" y="156" text-anchor="middle" font-size="10.5">:8080 /  e  /health</text>
+  <text x="353" y="172" text-anchor="middle" font-size="10.5">proxy.log</text>
+  <rect x="520" y="70" width="170" height="110" rx="6" fill="#fff" stroke="#1b1f24"/>
+  <text x="605" y="90" text-anchor="middle" font-weight="700">cliente</text>
+  <text x="605" y="108" text-anchor="middle" font-size="10.5">tráfego dos usuários</text>
+  <text x="605" y="124" text-anchor="middle" font-size="10.5">1 requisição a cada 100 ms</text>
+  <text x="605" y="140" text-anchor="middle" font-size="10.5">durante 80 s</text>
+  <text x="605" y="172" text-anchor="middle" font-size="10.5">cliente.csv</text>
+  <line x1="266" y1="118" x2="200" y2="118" stroke="#1b1f24" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="233" y="111" text-anchor="middle" font-size="10">polling 1 s</text>
+  <line x1="518" y1="118" x2="440" y2="118" stroke="#1b1f24" stroke-width="1.4" marker-end="url(#a)"/>
+  <text x="479" y="111" text-anchor="middle" font-size="10">HTTP GET</text>
+</svg>
+<div class="cap">Figura 1 — Containers e redes do <code>docker-compose.yml</code>. O cliente não alcança o
+gerador; o proxy é o único container nas duas redes. As setas indicam quem inicia a requisição.
+Cada container grava seu log em <code>logs/&lt;execução&gt;/</code>.</div>
+</div>
+
+<table>
+<tr><th style="width:14%">Container / rede</th><th style="width:27%">Peça real</th><th>Como foi modelada</th></tr>
+<tr><td><code>gerador</code></td><td>Cluster ClickHouse + job que gera o <i>feature file</i></td><td>Consulta simulada sem filtrar o banco: um nó atualizado devolve as linhas de <code>default</code> e de <code>r0</code>, dobrando o arquivo (120 → 240 features). A atualização avança nó a nó, e cada geração consulta um nó sorteado.</td></tr>
+<tr><td><code>proxy</code></td><td>Proxy FL2 com o módulo Bot Management</td><td>Vetor pré-alocado com 200 posições. Um arquivo maior estoura (<code>IndexError</code>, o equivalente ao <code>unwrap()</code>), e o proxy passa a responder 500.</td></tr>
+<tr><td><code>cliente</code></td><td>Tráfego de usuários</td><td>Uma requisição a cada 100 ms; o status e a latência de cada uma vão para <code>cliente.csv</code>.</td></tr>
+<tr><td>rede <code>interna</code></td><td>Plano de controle (distribuição de configuração)</td><td>Rede <code>internal: true</code>: só gerador e proxy.</td></tr>
+<tr><td>rede <code>publica</code></td><td>Plano de dados (tráfego de clientes)</td><td>Só cliente e proxy.</td></tr>
+</table>
+
+<h3>O que a miniatura não reproduz</h3>
+<table>
+<tr><th style="width:42%">Limitação</th><th>Efeito nas conclusões</th></tr>
+<tr><td>Um proxy só, contra milhares de máquinas que recebem o arquivo em momentos diferentes.</td><td>Na miniatura, a falha é instantânea e atinge 100% do tráfego. A porcentagem de erro medida é um caso extremo e não representa a falha parcial e progressiva da rede real.</td></tr>
+<tr><td>O proxy recarrega a configuração sozinho. No caso real foi preciso reimplantar o arquivo bom e reiniciar serviços, que ficaram com problemas até 17:06.</td><td>O tempo de recuperação medido é muito menor que o real. Medimos só “arquivo bom de volta → tráfego ok”, sem essa cauda longa.</td></tr>
+<tr><td>O rollback acontece num horário programado (<code>T_ROLLBACK</code>). No caso real, ele dependeu do diagnóstico, atrasado pela suspeita de DDoS e pela queda coincidente da página de status.</td><td>Não medimos o tempo de diagnóstico humano, que dominou a duração real do incidente (de 11:28 a 14:30).</td></tr>
+<tr><td>Só o comportamento do FL2 (5xx) foi simulado. No proxy antigo (FL) não houve erro, mas o bot score de todo o tráfego ficou em zero.</td><td>A miniatura não mostra a falha silenciosa (bots mal classificados sem nenhum erro HTTP), que é mais difícil de detectar.</td></tr>
+</table>
+
+<h2>Parte C — O experimento</h2>
+<p>Comandos: <code>./rodar.sh sem_mitigacao off</code> e <code>./rodar.sh com_mitigacao on</code>,
+seguidos da comparação (ver README). Parâmetros no <code>docker-compose.yml</code>:
+<code>T_MUDANCA</code> 15 s, <code>PASSO_ROLLOUT</code> 6 s, <code>INTERVALO_GERACAO</code> 3 s,
+<code>T_ROLLBACK</code> 60 s, <code>SEED</code> 42. A linha do tempo é comprimida: uma geração a cada
+3 s, contra cinco minutos no caso real.</p>
+
+<table>
+<tr><th>Métrica</th><th>Miniatura</th><th>Fonte (log)</th><th>Caso real</th><th>Fonte (artigo)</th></tr>
+<tr><td>Tempo até a falha (mudança → 1º erro)</td><td class="n">7.10 s</td><td><code>logs/sem_mitigacao/metricas.txt</code></td><td>11:05 → 11:28</td><td>Tabela final</td></tr>
+<tr><td>Tempo até a falha (1º arquivo ruim → 1º erro)</td><td class="n">0.95 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Propagação (1º arquivo ruim → PANICO no proxy)</td><td class="n">0.89 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Tempo até a recuperação (rollback → último erro)</td><td class="n">0.16 s</td><td>idem</td><td>14:24 → 14:30 (impacto principal); até 17:06 para tudo</td><td>Tabela final</td></tr>
+<tr><td>Duração do impacto (1º erro → último erro)</td><td class="n">38.09 s</td><td>idem</td><td>11:28 → 14:30</td><td>Tabela final</td></tr>
+<tr><td>% de requisições com erro (execução inteira)</td><td class="n">40.07 %</td><td>idem</td><td>não informado em número (só o gráfico de 5xx)</td><td>Seção <i>The outage</i></td></tr>
+<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.01 % (319/389)</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Número de oscilações (blocos de erro)</td><td class="n">3</td><td>idem</td><td>“spike, and subsequent fluctuations”</td><td>Seção <i>The outage</i></td></tr>
+</table>
+
+<p><b>Comparação.</b> O mecanismo se repetiu na miniatura. Os 11 arquivos ruins publicados
+(<code>gerador.log</code>, todos com <code>n=240</code>) geraram 11 eventos <code>PANICO</code> no
+<code>proxy.log</code>, todos com <code>erro=IndexError_alem_do_limite_pre_alocado</code>. A falha
+também se propagou rápido: o primeiro erro chegou ao cliente 0.95 s depois da publicação do primeiro
+arquivo ruim, praticamente o intervalo de leitura do proxy. A oscilação descrita na seção
+<i>The outage</i> também apareceu, com 3 blocos de erro. Enquanto só parte dos nós estava atualizada,
+o <code>gerador.log</code> alterna arquivos ruins e bons (versões 8 a 11); a partir da versão 12, com
+4 de 5 nós atualizados, só saem arquivos ruins, e o erro fica contínuo até o rollback. É o mesmo
+padrão de “falha, recupera, falha de novo, até todos os nós gerarem o arquivo ruim” do artigo. Os
+tempos não se comparam diretamente. A miniatura comprime a linha do tempo (3 s por geração contra
+cinco minutos), e o rollback é programado, enquanto no caso real ele dependeu de horas de
+diagnóstico. Por isso a duração do impacto (38.09 s contra 11:28 → 14:30) e a recuperação
+(0.16 s contra a cauda até 17:06) mostram só o mecanismo, não a escala. A porcentagem de erro na
+janela de falha (82.01 %) é um limite superior, porque o único proxy recebe 100% do tráfego (ver
+limitações).</p>
+
+<p><b>O que saiu diferente do esperado.</b> Esperávamos que o healthcheck do Docker apontasse o
+proxy como <code>unhealthy</code> durante a falha. Não apontou. Durante todo o pânico, o proxy
+respondeu 500 em 321 requisições (<code>logs/sem_mitigacao/metricas.txt</code>), mas o
+<code>compose.log</code> da mesma execução não tem nenhuma linha <code>unhealthy</code>. A explicação
+está no código: o <code>/health</code> do proxy (<code>proxy/proxy.py</code>, linhas 87–89) só
+confirma que o processo está vivo e sempre responde 200. O processo de fato não morreu, só o módulo
+de bots falhava. Para o orquestrador, o serviço estava saudável enquanto devolvia erro para todos.
+É o mesmo ponto cego do caso real: a falha não derrubou máquinas, derrubou respostas. Um segundo
+detalhe: houve erros <i>depois</i> do rollback. O <code>ROLLBACK</code> foi registrado em
+<code>1795024901.792</code> (<code>gerador.log</code>), mas o cliente ainda recebeu 500 em
+<code>1795024901.856</code> e <code>1795024901.956</code> (<code>cliente.csv</code>). O proxy só
+carregou o arquivo bom em <code>1795024902.032</code> (<code>proxy.log</code>, versão 21), porque lê a
+configuração uma vez por segundo. Por isso o total de erros (321) é maior que os erros dentro da
+janela de falha (319): o rollback não vale até o último consumidor ler o arquivo novo.</p>
+
+<p><b>Repetição com outros <code>SEED</code>.</b> O <code>SEED</code> decide qual nó responde a cada
+geração. Repetimos a execução sem mitigação com <code>SEED=7</code> e <code>SEED=2025</code> para ver se
+a oscilação era um acaso:</p>
+<table>
+<tr><th>Execução</th><th>Mudança → 1º erro</th><th>Blocos de erro</th><th>% de erro</th><th>Duração do impacto</th><th>Fonte</th></tr>
+<tr><td><code>SEED=42</code></td><td class="n">7.10 s</td><td class="n">3</td><td class="n">40.07 %</td><td class="n">38.09 s</td><td><code>logs/sem_mitigacao/metricas.txt</code></td></tr>
+<tr><td><code>SEED=7</code></td><td class="n">0.89 s</td><td class="n">4</td><td class="n">40.20 %</td><td class="n">44.19 s</td><td><code>logs/sem_mitigacao_seed7/metricas.txt</code></td></tr>
+<tr><td><code>SEED=2025</code></td><td class="n">3.94 s</td><td class="n">2</td><td class="n">40.20 %</td><td class="n">41.20 s</td><td><code>logs/sem_mitigacao_seed2025/metricas.txt</code></td></tr>
+</table>
+<p>O tempo até a falha e o número de oscilações dependem de qual nó é sorteado. Com
+<code>SEED=7</code>, o primeiro arquivo ruim saiu logo depois da atualização do primeiro nó, e o primeiro
+erro veio 0.89 s após a mudança. Já a porcentagem total de erro quase não mudou (40.07 % e 40.20 %).
+Isso acontece porque, quando todos os nós estão atualizados, todo arquivo sai ruim, e o fim da falha
+depende só do rollback programado. A oscilação torna o <i>início</i> do incidente imprevisível
+(parece intermitente e confunde o diagnóstico, como a suspeita de DDoS no caso real), mas não muda
+quanto tempo ele dura.</p>
+
+<h2>Parte D — Parecer para a diretora</h2>
+
+<p><b>Isso pode acontecer com o nosso projeto?</b> Sim, em escala menor. O projeto da equipe
+(<code>mercado-de-jogadores</code>: API NestJS, PostgreSQL e frontend React, em Docker Compose) lê
+uma configuração e a aplica sem validar o formato. Também não tem healthcheck que perceba se a API
+está respondendo. É a mesma combinação do incidente: uma entrada interna tratada como confiável e
+um orquestrador que não enxerga a falha.</p>
+
+<p><b>Onde:</b> <code>backend/src/config/env.ts</code>, linha 26 (commit <code>9e1e130</code>), usada em
+<code>backend/src/main.ts</code>, linhas 9 e 15:</p>
+<pre>// env.ts:26
+    port: source.PORT ? Number(source.PORT) : DEFAULT_PORT,
+// main.ts:9 e :15
+  const env = readEnv(process.env);
+  await app.listen(env.port);</pre>
+<p>A função <code>readEnv</code> valida o <code>CORS_ORIGIN</code>, mas não a <code>PORT</code>: qualquer
+texto vira número sem checar o formato nem a faixa. Reproduzimos a mesma expressão no Node v22.23.3
+(<code>logs/parte_d/teste_port_node.txt</code>). Com <code>PORT='3000abc'</code>, o resultado é
+<code>port = NaN</code>, e o <code>listen</code> falha com
+<code>ERR_SOCKET_BAD_PORT ... Received type number (NaN)</code>. Com <code>PORT='70000'</code>, falha do
+mesmo jeito. Como no <code>unwrap()</code> da Cloudflare, um valor de configuração fora do esperado
+não é rejeitado na entrada: ele vira um erro não tratado no ponto de uso, e a API não sobe. O
+<code>docker-compose.yml</code> do projeto agrava o problema. O serviço <code>backend</code> não tem
+healthcheck, e o <code>frontend</code> declara só <code>depends_on: - backend</code>, que espera o
+container iniciar, não ficar saudável. O frontend sobe normalmente com o backend fora do ar, como o
+proxy da miniatura, que parecia saudável para o Docker. A diferença em relação à Cloudflare é que o
+erro acontece na inicialização, e não ao recarregar a configuração com o sistema já servindo. Por
+isso aparece logo no deploy, mas derruba a API inteira, sem manter a última configuração boa.</p>
+
+<p><b>Mitigação implementada na miniatura:</b> o limite é validado <i>antes</i> de aplicar a
+configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última configuração boa
+(<code>proxy/proxy.py</code>, linhas 45–46, ativada com <code>MITIGACAO=on</code>). Isso corresponde
+à primeira ação corretiva do artigo. Mesmos parâmetros e mesmo <code>SEED</code> nas duas execuções:</p>
+
+<table>
+<tr><th>Métrica</th><th>Sem mitigação</th><th>Com mitigação</th><th>Fonte</th></tr>
+<tr><td>% de requisições com erro</td><td class="n">40.07 %</td><td class="n">0.00 %</td><td><code>logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt</code></td></tr>
+<tr><td>Requisições com erro</td><td class="n">321</td><td class="n">0</td><td>idem</td></tr>
+<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.01 % (319/389)</td><td class="n">0.00 % (0/388)</td><td>idem</td></tr>
+<tr><td>Blocos de erro (oscilações)</td><td class="n">3</td><td class="n">0</td><td>idem</td></tr>
+<tr><td>Arquivos ruins publicados</td><td class="n">11</td><td class="n">11</td><td>idem</td></tr>
+<tr><td>Eventos <code>PANICO</code></td><td class="n">11</td><td class="n">0</td><td>idem</td></tr>
+<tr><td>Arquivos <code>REJEITADOS</code></td><td class="n">0</td><td class="n">11</td><td>idem</td></tr>
+</table>
+<p>Os mesmos 11 arquivos ruins chegaram ao proxy nas duas execuções. Com a validação, todos foram
+rejeitados (<code>proxy.log</code>: <code>REJEITADO ... mantendo_versao=11</code>), e o cliente recebeu
+só respostas 200. Há um custo: com a mitigação, o proxy ficou parado na versão 11 até o rollback e
+não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
+problema de quem gera o arquivo, se ninguém monitorar as rejeições.</p>
+
+<p><b>Recomendação final.</b> Recomendamos tratar toda configuração interna como entrada não
+confiável. No nosso projeto, a primeira medida é validar a <code>PORT</code> (inteiro entre 1 e 65535)
+em <code>readEnv</code>, como já é feito com o <code>CORS_ORIGIN</code>, para que um valor errado
+gere uma mensagem clara no deploy. A segunda é adicionar ao <code>backend</code> um healthcheck que
+faça uma requisição real à API, e trocar o <code>depends_on</code> do <code>frontend</code> por
+<code>condition: service_healthy</code>. Na miniatura, a validação levou o erro de 40.07 % para
+0.00 %, mas só funciona se as rejeições gerarem alerta: um sistema que rejeita configurações em
+silêncio troca uma queda visível por uma configuração congelada que ninguém percebe.</p>
+
+</body>
+</html>

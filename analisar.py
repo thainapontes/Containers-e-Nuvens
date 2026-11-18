@@ -103,8 +103,13 @@ def analisar(pasta):
     linhas = [f"Execucao: {pasta}", ""]
     linhas += [f"{k.ljust(largura)}  {v:<32} fonte: {fonte}" for k, (v, fonte) in m.items()]
     texto = "\n".join(linhas) + "\n"
-    with open(os.path.join(pasta, "metricas.txt"), "w") as f:
-        f.write(texto)
+    # não sobrescreve: metricas.txt faz parte das saídas brutas da execução
+    destino = os.path.join(pasta, "metricas.txt")
+    if os.path.exists(destino):
+        print(f"{destino} ja existe; mantido sem alteracao")
+    else:
+        with open(destino, "w") as f:
+            f.write(texto)
     print(texto)
     return m
 
@@ -127,10 +132,13 @@ def main():
             vb = resultados[b].get(k, ("n/a",))[0]
             linhas.append(f"{k.ljust(largura)}  {va:<34} {vb}")
         texto = "\n".join(linhas) + "\n"
-        with open(destino, "w") as f:
-            f.write(texto)
         print(texto)
-        print(f"comparacao salva em {destino}")
+        if os.path.exists(destino):
+            print(f"{destino} ja existe; mantido sem alteracao")
+        else:
+            with open(destino, "w") as f:
+                f.write(texto)
+            print(f"comparacao salva em {destino}")
 
 
 if __name__ == "__main__":

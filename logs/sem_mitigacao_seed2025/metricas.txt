@@ -1,0 +1,15 @@
+Execucao: logs/sem_mitigacao_seed2025
+
+requisicoes_total                                       801                              fonte: cliente.csv
+requisicoes_com_erro                                    322                              fonte: cliente.csv
+porcentagem_erro                                        40.20 %                          fonte: cliente.csv
+porcentagem_erro_entre_1o_arquivo_ruim_e_rollback       76.37 % (320/419)                fonte: cliente.csv + gerador.log
+blocos_de_erro (oscilacoes)                             2                                fonte: cliente.csv
+arquivos_ruins_publicados                               11                               fonte: gerador.log
+eventos_PANICO_no_proxy                                 11                               fonte: proxy.log
+arquivos_REJEITADOS_pelo_proxy                          0                                fonte: proxy.log
+tempo_ate_falha (mudanca -> 1o erro)                    3.94 s                           fonte: gerador.log MUDANCA_INICIADA + cliente.csv
+tempo_ate_falha (1o arquivo ruim publicado -> 1o erro)  0.86 s                           fonte: gerador.log PUBLICADO tipo=ruim + cliente.csv
+propagacao (1o arquivo ruim -> PANICO no proxy)         0.85 s                           fonte: gerador.log + proxy.log
+tempo_ate_recuperacao (rollback -> ultimo erro)         0.16 s                           fonte: gerador.log ROLLBACK + cliente.csv
+duracao_do_impacto (1o erro -> ultimo erro)             41.20 s                          fonte: cliente.csv

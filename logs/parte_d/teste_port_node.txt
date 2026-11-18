@@ -1,0 +1,12 @@
+Teste do trecho backend/src/config/env.ts:26 do projeto mercado-de-jogadores (commit 9e1e130)
+data: 2026-11-18T18:12:59Z
+node v22.23.3
+== PORT='3000abc'
+port = NaN
+ERRO: ERR_SOCKET_BAD_PORT options.port should be >= 0 and < 65536. Received type number (NaN).
+== PORT='70000'
+port = 70000
+ERRO: ERR_SOCKET_BAD_PORT options.port should be >= 0 and < 65536. Received type number (70000).
+== PORT=''
+port = 3000
+escutando em 3000

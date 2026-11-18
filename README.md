@@ -20,15 +20,19 @@ git clone https://github.com/thainapontes/Containers-e-Nuvens
 cd Containers-e-Nuvens
 
 # 1) Reproduzir a falha (cerca de 1 minuto e meio)
-./rodar.sh sem_mitigacao off
+./rodar.sh prof_sem_mitigacao off
 
 # 2) Rodar com a mitigação (validação do limite + última configuração boa)
-./rodar.sh com_mitigacao on
+./rodar.sh prof_com_mitigacao on
 
 # 3) Comparar as duas execuções
 docker run --rm -v "$PWD":/w -w /w python:3.12-slim \
-  python analisar.py logs/sem_mitigacao logs/com_mitigacao
+  python analisar.py logs/prof_sem_mitigacao logs/prof_com_mitigacao
 ```
+
+> Use nomes novos (como `prof_...`). As pastas `logs/sem_mitigacao` e `logs/com_mitigacao` já
+> existem no repositório: são as execuções citadas no laudo, e o script se recusa a
+> sobrescrevê-las.
 
 Cada execução cria `logs/<nome>/` com:
 
@@ -53,7 +57,7 @@ Para repetir, use outro nome: `./rodar.sh sem_mitigacao_2 off`.
 ## Rodar sem o script (PowerShell)
 
 ```powershell
-$env:RUN_ID="sem_mitigacao"; $env:MITIGACAO="off"
+$env:RUN_ID="prof_sem_mitigacao"; $env:MITIGACAO="off"
 mkdir logs\$env:RUN_ID
 docker compose up --abort-on-container-exit --exit-code-from cliente
 docker compose down
@@ -93,6 +97,20 @@ real levou horas aqui leva segundos.
 
 Use a mesma `SEED` nas execuções com e sem mitigação para que as duas recebam exatamente a
 mesma sequência de arquivos bons e ruins.
+
+## Laudo e execuções citadas
+
+- Laudo em PDF: [`laudo/laudo.pdf`](laudo/laudo.pdf) (fonte em `laudo/laudo.html`).
+- Execuções citadas no laudo (saídas brutas, não editadas):
+
+| Pasta | Comando |
+|---|---|
+| `logs/sem_mitigacao/` | `./rodar.sh sem_mitigacao off` (`SEED` 42) |
+| `logs/com_mitigacao/` | `./rodar.sh com_mitigacao on` (`SEED` 42) |
+| `logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt` | `python analisar.py logs/sem_mitigacao logs/com_mitigacao` |
+| `logs/sem_mitigacao_seed7/` | `SEED=7 ./rodar.sh sem_mitigacao_seed7 off` |
+| `logs/sem_mitigacao_seed2025/` | `SEED=2025 ./rodar.sh sem_mitigacao_seed2025 off` |
+| `logs/parte_d/teste_port_node.txt` | teste do trecho `env.ts:26` do projeto `mercado-de-jogadores` (Parte D) |
 
 ## Estrutura
 
