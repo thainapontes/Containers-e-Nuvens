@@ -1,0 +1,61 @@
+# Miniatura do incidente da Cloudflare de 18/11/2025.
+# Uso recomendado: ./rodar.sh <nome_da_execucao> <off|on>   (veja o README)
+
+services:
+  gerador:                       # job que gera o feature file a partir do ClickHouse
+    image: python:3.12-slim
+    command: ["python", "-u", "/app/gerador.py"]
+    volumes:
+      - ./gerador:/app:ro
+      - ./logs/${RUN_ID:-teste}:/logs
+    environment:
+      N_FEATURES: "120"          # features no arquivo bom (dobra no arquivo ruim)
+      N_NOS: "5"                 # nós do cluster ClickHouse
+      T_MUDANCA: "15"            # s até a mudança de permissão começar
+      PASSO_ROLLOUT: "6"         # s entre a atualização de um nó e o próximo
+      INTERVALO_GERACAO: "3"     # s entre gerações do arquivo (no real: 5 min)
+      T_ROLLBACK: "60"           # s até operadores pararem a geração e reinjetarem o arquivo bom
+      SEED: "${SEED:-42}"
+    networks: [interna]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 2s
+      retries: 10
+
+  proxy:                         # proxy central (FL2) com o módulo Bot Management
+    image: python:3.12-slim
+    command: ["python", "-u", "/app/proxy.py"]
+    volumes:
+      - ./proxy:/app:ro
+      - ./logs/${RUN_ID:-teste}:/logs
+    environment:
+      LIMITE: "200"              # limite pré-alocado, igual ao do artigo
+      MITIGACAO: "${MITIGACAO:-off}"
+      GERADOR_URL: "http://gerador:8000/features.json"
+      POLL: "1"
+    depends_on:
+      gerador: {condition: service_healthy}
+    networks: [interna, publica]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 2s
+      retries: 10
+
+  cliente:                       # tráfego dos usuários
+    image: python:3.12-slim
+    command: ["python", "-u", "/app/cliente.py"]
+    volumes:
+      - ./cliente:/app:ro
+      - ./logs/${RUN_ID:-teste}:/logs
+    environment:
+      PROXY_URL: "http://proxy:8080/"
+      INTERVALO_MS: "100"        # 10 requisições por segundo
+      DURACAO: "80"
+    depends_on:
+      proxy: {condition: service_healthy}
+    networks: [publica]
+
+networks:
+  interna:                       # plano de controle: só gerador <-> proxy
+    internal: true
+  publica: {}                    # plano de dados: cliente <-> proxy
