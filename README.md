@@ -110,7 +110,8 @@ mesma sequência de arquivos bons e ruins.
 | `logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt` | `python analisar.py logs/sem_mitigacao logs/com_mitigacao` |
 | `logs/sem_mitigacao_seed7/` | `SEED=7 ./rodar.sh sem_mitigacao_seed7 off` |
 | `logs/sem_mitigacao_seed2025/` | `SEED=2025 ./rodar.sh sem_mitigacao_seed2025 off` |
-| `logs/parte_d/teste_port_node.txt` | teste do trecho `env.ts:26` do projeto `mercado-de-jogadores` (Parte D) |
+| `logs/parte_d/teste_lote_worker.txt` | worker do projeto `Marketplace-da-economia-criativa` com `LOTE=cinco` e `LOTE=5` (Parte D) |
+| `logs/parte_d/teste_port_env.txt` | `env.js` do mesmo projeto com `PORT` inválida; script em `logs/parte_d/teste_porta.mjs` (Parte D) |
 
 ## Estrutura
 

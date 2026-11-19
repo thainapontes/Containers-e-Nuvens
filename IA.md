@@ -20,7 +20,10 @@ da IA:
   - avisar antes de cada passo grande.
 - **Ambiente:** a equipe ligou o Docker Desktop e ativou a integração com o WSL quando o
   Docker não foi encontrado (Erro 2).
-- **Projeto da Parte D:** a equipe escolheu o projeto `mercado-de-jogadores` para o parecer.
+- **Projeto da Parte D:** a equipe corrigiu a IA, que tinha usado o projeto `mercado-de-jogadores`,
+  e indicou o projeto da disciplina, o `Marketplace-da-economia-criativa`.
+- **Equipe e artigo:** a equipe conferiu no mural da turma que o artigo 3 tinha só uma outra equipe
+  (o limite é duas) e informou os nomes para o cabeçalho do laudo.
 - **Revisão:** a equipe revisou o que a IA entregou em cada passo. No prompt 4, pediu a lista
   do que faltava em relação à rubrica antes de seguir.
 
@@ -68,8 +71,8 @@ Parte A sem conferência, Parte D sem projeto da equipe, IA.md incompleto).
 **Descartamos:** —
 
 ### Prompt 5 (Claude Code)
-**Prompt:** "faça tudo [...] e me entregue pronto" + a escolha do projeto `mercado-de-jogadores`
-para a Parte D.
+**Prompt:** "faça tudo [...] e me entregue pronto"; depois, "ele cumpre tudo que a atividade pediu?"
+e a correção do projeto da Parte D.
 **Resposta da IA:**
 - conferiu cada citação da Parte A no artigo original;
 - rodou duas execuções extras com `SEED` diferente;
@@ -78,8 +81,15 @@ para a Parte D.
 - redigiu o laudo completo, desenhou o diagrama e gerou o PDF;
 - testou o README num clone limpo.
 **Aceitamos:** o texto do laudo e o diagrama.
-**Mudamos:** —
-**Descartamos:** —
+**Mudamos:**
+- a IA escreveu na Parte D que as 11 rejeições mantiveram a versão 11. No
+  `logs/com_mitigacao/proxy.log`, só as 9 últimas mantiveram a versão 11 (as duas primeiras mantiveram
+  as versões 7 e 9). O texto foi corrigido.
+- a IA tinha feito a Parte D sobre o `mercado-de-jogadores`, que não é o projeto da disciplina.
+  Refizemos a Parte D sobre o `Marketplace-da-economia-criativa`, rodando o worker real do projeto
+  contra um PostgreSQL temporário (`logs/parte_d/teste_lote_worker.txt`) e o `env.js` real
+  (`logs/parte_d/teste_port_env.txt`).
+**Descartamos:** o trecho `env.ts:26` do `mercado-de-jogadores` e o log `teste_port_node.txt`.
 
 ## Erros da IA encontrados ao rodar o código
 

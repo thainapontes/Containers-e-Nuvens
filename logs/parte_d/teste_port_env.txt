@@ -1,0 +1,16 @@
+Teste do trecho backend/src/config/env.js:13 do projeto Marketplace-da-economia-criativa (commit 9660298)
+data: 2026-11-19T13:15:55Z
+node v22.23.3
+importa o env.js real do projeto e chama listen(config.porta)
+== PORT='3333abc'
+porta = NaN
+ERRO: ERR_SOCKET_BAD_PORT options.port should be >= 0 and < 65536. Received type number (NaN).
+== PORT='70000'
+porta = 70000
+ERRO: ERR_SOCKET_BAD_PORT options.port should be >= 0 and < 65536. Received type number (70000).
+== PORT='' (definida, mas vazia)
+porta = 0
+escutando em 0
+== PORT nao definida
+porta = 3333
+escutando em 3333

@@ -28,7 +28,7 @@
 <body>
 
 <h1>Laudo técnico: incidente da Cloudflare de 18/11/2025</h1>
-<div class="meta">Disciplina de Containers e Nuvem · Equipe de SRE ·
+<div class="meta">Disciplina de Containers e Nuvem · Equipe de SRE: Thainá Pontes, Everton Nunes e Andriele Santiago ·<br>
 Repositório: <code>https://github.com/thainapontes/Containers-e-Nuvens</code><br>
 Fonte: Cloudflare, “Cloudflare outage on November 18, 2025”,
 https://blog.cloudflare.com/18-november-2025-outage/ (horários em UTC). Citações do artigo
@@ -196,32 +196,35 @@ quanto tempo ele dura.</p>
 
 <h2>Parte D — Parecer para a diretora</h2>
 
-<p><b>Isso pode acontecer com o nosso projeto?</b> Sim, em escala menor. O projeto da equipe
-(<code>mercado-de-jogadores</code>: API NestJS, PostgreSQL e frontend React, em Docker Compose) lê
-uma configuração e a aplica sem validar o formato. Também não tem healthcheck que perceba se a API
-está respondendo. É a mesma combinação do incidente: uma entrada interna tratada como confiável e
-um orquestrador que não enxerga a falha.</p>
+<p><b>Isso pode acontecer com o nosso projeto?</b> Sim, em escala menor. O projeto da equipe é o
+<code>Marketplace-da-economia-criativa</code> (Origem: API Express, worker de fila assíncrona e
+PostgreSQL 16 no Docker Compose; https://github.com/thainapontes/Marketplace-da-economia-criativa).
+Ele lê limites numéricos do ambiente e os aplica sem validar o formato. Também não há nada que
+perceba quando o worker para de trabalhar mas continua vivo. É a mesma combinação do incidente: uma
+entrada interna tratada como confiável e um processo que falha sem parecer que falhou.</p>
 
-<p><b>Onde:</b> <code>backend/src/config/env.ts</code>, linha 26 (commit <code>9e1e130</code>), usada em
-<code>backend/src/main.ts</code>, linhas 9 e 15:</p>
-<pre>// env.ts:26
-    port: source.PORT ? Number(source.PORT) : DEFAULT_PORT,
-// main.ts:9 e :15
-  const env = readEnv(process.env);
-  await app.listen(env.port);</pre>
-<p>A função <code>readEnv</code> valida o <code>CORS_ORIGIN</code>, mas não a <code>PORT</code>: qualquer
-texto vira número sem checar o formato nem a faixa. Reproduzimos a mesma expressão no Node v22.23.3
-(<code>logs/parte_d/teste_port_node.txt</code>). Com <code>PORT='3000abc'</code>, o resultado é
-<code>port = NaN</code>, e o <code>listen</code> falha com
-<code>ERR_SOCKET_BAD_PORT ... Received type number (NaN)</code>. Com <code>PORT='70000'</code>, falha do
-mesmo jeito. Como no <code>unwrap()</code> da Cloudflare, um valor de configuração fora do esperado
-não é rejeitado na entrada: ele vira um erro não tratado no ponto de uso, e a API não sobe. O
-<code>docker-compose.yml</code> do projeto agrava o problema. O serviço <code>backend</code> não tem
-healthcheck, e o <code>frontend</code> declara só <code>depends_on: - backend</code>, que espera o
-container iniciar, não ficar saudável. O frontend sobe normalmente com o backend fora do ar, como o
-proxy da miniatura, que parecia saudável para o Docker. A diferença em relação à Cloudflare é que o
-erro acontece na inicialização, e não ao recarregar a configuração com o sistema já servindo. Por
-isso aparece logo no deploy, mas derruba a API inteira, sem manter a última configuração boa.</p>
+<p><b>Onde:</b> <code>backend/src/worker.js</code>, linha 36 (commit <code>9660298</code>). O valor
+vai para o <code>LIMIT $1</code> da consulta que reserva jobs
+(<code>backend/src/repositories/fila.repository.js</code>, linha 109), chamada na linha 110 do worker:</p>
+<pre>// worker.js:36
+const LOTE = Number(process.env.LOTE ?? 5);
+// worker.js:110
+      const jobs = await reservar(pool, LOTE);</pre>
+<p>Qualquer texto vira número sem checagem. Rodamos o worker real do projeto contra o schema de
+<code>backend/sql</code>, com 3 jobs <code>notificar_pedido</code> na fila
+(<code>logs/parte_d/teste_lote_worker.txt</code>). Com <code>LOTE=cinco</code>, o worker sobe com
+<code>lote=NaN</code> e cada rodada falha com <code>invalid input syntax for type bigint: "NaN"</code>.
+O <code>catch</code> do laço principal (linhas 126–130) só registra o erro e tenta de novo em 2 s: o processo
+não morre, e os 3 jobs continuam <code>pendente</code> depois de 8 s. Com <code>LOTE=5</code>, no mesmo
+banco, os 3 jobs ficam <code>processado</code> em menos de 1 s. Como no FL2 da Cloudflare, um valor de
+configuração fora do formato não é rejeitado na entrada, mas no ponto de uso, e repete o erro a cada ciclo.
+Como no FL antigo, a falha é silenciosa: a API continua confirmando pedidos, que enfileiram a notificação
+(<code>backend/src/repositories/pedido.repository.js</code>, linha 120), mas as notificações de compra nunca saem. O mesmo padrão aparece em <code>backend/src/config/env.js</code>, linha 13
+(<code>porta: Number(process.env.PORT ?? 3333)</code>). Testamos o <code>env.js</code> real
+(<code>logs/parte_d/teste_port_env.txt</code>): <code>PORT='3333abc'</code> e <code>PORT='70000'</code> derrubam
+a API com <code>ERR_SOCKET_BAD_PORT</code>, e <code>PORT=''</code> vira <code>porta = 0</code>: a API sobe numa
+porta aleatória, sem erro nenhum. O <code>docker-compose.yml</code> do projeto tem healthcheck só para o
+PostgreSQL (<code>pg_isready</code>); a API e o worker não têm nenhum.</p>
 
 <p><b>Mitigação implementada na miniatura:</b> o limite é validado <i>antes</i> de aplicar a
 configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última configuração boa
@@ -239,19 +242,20 @@ configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última c
 <tr><td>Arquivos <code>REJEITADOS</code></td><td class="n">0</td><td class="n">11</td><td>idem</td></tr>
 </table>
 <p>Os mesmos 11 arquivos ruins chegaram ao proxy nas duas execuções. Com a validação, todos foram
-rejeitados (<code>proxy.log</code>: <code>REJEITADO ... mantendo_versao=11</code>), e o cliente recebeu
-só respostas 200. Há um custo: com a mitigação, o proxy ficou parado na versão 11 até o rollback e
-não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
+rejeitados (<code>logs/com_mitigacao/proxy.log</code>: 11 linhas <code>REJEITADO</code>), e o cliente recebeu
+só respostas 200. Há um custo: a partir da versão 12, o proxy ficou parado na versão 11 até o rollback
+(<code>REJEITADO ... mantendo_versao=11</code>, 9 vezes) e não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
 problema de quem gera o arquivo, se ninguém monitorar as rejeições.</p>
 
 <p><b>Recomendação final.</b> Recomendamos tratar toda configuração interna como entrada não
-confiável. No nosso projeto, a primeira medida é validar a <code>PORT</code> (inteiro entre 1 e 65535)
-em <code>readEnv</code>, como já é feito com o <code>CORS_ORIGIN</code>, para que um valor errado
-gere uma mensagem clara no deploy. A segunda é adicionar ao <code>backend</code> um healthcheck que
-faça uma requisição real à API, e trocar o <code>depends_on</code> do <code>frontend</code> por
-<code>condition: service_healthy</code>. Na miniatura, a validação levou o erro de 40.07 % para
-0.00 %, mas só funciona se as rejeições gerarem alerta: um sistema que rejeita configurações em
-silêncio troca uma queda visível por uma configuração congelada que ninguém percebe.</p>
+confiável. No nosso projeto, a primeira medida é validar, na inicialização, todos os números lidos do
+ambiente: <code>LOTE</code>, <code>PORT</code> (inteiro entre 1 e 65535), <code>INTERVALO_MS</code>,
+<code>PG_POOL_MAX</code> e <code>CACHE_TTL_MS</code>. Um valor inválido deve impedir o processo de
+subir, com uma mensagem clara, em vez de virar <code>NaN</code> ou 0. A segunda medida é dar ao worker um
+sinal de saúde que reflita trabalho feito (por exemplo, o horário da última rodada sem erro) e um alerta
+quando a fila parar de andar. Na miniatura, a validação levou o erro de 40.07 % para 0.00 %, mas só
+funciona se as rejeições gerarem alerta: um sistema que rejeita configurações em silêncio troca uma queda
+visível por uma configuração congelada que ninguém percebe.</p>
 
 </body>
 </html>
