@@ -31,7 +31,7 @@
 
 <h1>Laudo técnico: incidente da Cloudflare de 18/11/2025</h1>
 <div class="meta">Disciplina de Containers e Nuvem · Equipe de SRE: Thainá Pontes, Everton Nunes e Andriele Santiago ·<br>
-Repositório: <code>https://github.com/thainapontes/Containers-e-Nuvens</code><br>
+Repositório: <a href="https://github.com/thainapontes/Containers-e-Nuvens"><code>https://github.com/thainapontes/Containers-e-Nuvens</code></a><br>
 Fonte: Cloudflare, “Cloudflare outage on November 18, 2025”,
 https://blog.cloudflare.com/18-november-2025-outage/ (horários em UTC). Citações do artigo
 em inglês, como no original.</div>
@@ -39,9 +39,9 @@ em inglês, como no original.</div>
 <h2>Parte A — O mecanismo</h2>
 
 <p><b>Mecanismo em uma frase.</b> Uma mudança de permissões no ClickHouse fez a consulta que gera
-o <i>feature file</i> do Bot Management devolver linhas duplicadas. O arquivo dobrou de tamanho e
-passou do limite fixo de 200 features pré-alocado no proxy. O código do proxy entrou em pânico e,
-como o proxy fica no caminho de todo o tráfego, a rede passou a responder 5xx.</p>
+o <i>feature file</i> do Bot Management devolver linhas duplicadas, e o arquivo, com o dobro do tamanho,
+passou do limite fixo de 200 features pré-alocado no proxy, que entrou em pânico e passou a responder
+5xx para todo o tráfego.</p>
 
 <p>O artigo descreve o limite na seção <i>Memory preallocation</i>: “Currently that limit is set to
 200, well above our current use of ~60 features.” O pânico aparece na mesma seção:
@@ -151,19 +151,19 @@ do laudo e incluem o <code>saude.log</code>; as anteriores, sem esse arquivo, co
 </table>
 
 <p><b>Comparação.</b> O mecanismo se repetiu na miniatura. Os 11 arquivos ruins publicados
-(<code>gerador.log</code>, todos com <code>n=240</code>) geraram 11 eventos <code>PANICO</code> no
-<code>proxy.log</code>, todos com <code>erro=IndexError_alem_do_limite_pre_alocado</code>. A falha
+(<code>logs/sem_mitigacao_v2/gerador.log</code>, todos com <code>n=240</code>) geraram 11 eventos <code>PANICO</code> no
+<code>logs/sem_mitigacao_v2/proxy.log</code>, todos com <code>erro=IndexError_alem_do_limite_pre_alocado</code>. A falha
 também se propagou rápido: o primeiro erro chegou ao cliente 0.81 s depois da publicação do primeiro
-arquivo ruim, praticamente o intervalo de leitura do proxy. A oscilação descrita na seção
-<i>The outage</i> também apareceu, com 3 blocos de erro. Enquanto só parte dos nós estava atualizada,
-o <code>gerador.log</code> alterna arquivos ruins e bons (versões 8 a 11); a partir da versão 12, com
+arquivo ruim (<code>logs/sem_mitigacao_v2/metricas.txt</code>), praticamente o intervalo de leitura do proxy. A oscilação descrita na seção
+<i>The outage</i> também apareceu, com 3 blocos de erro (mesmo arquivo). Enquanto só parte dos nós estava atualizada,
+o <code>logs/sem_mitigacao_v2/gerador.log</code> alterna arquivos ruins e bons (versões 8 a 11); a partir da versão 12, com
 4 de 5 nós atualizados, só saem arquivos ruins, e o erro fica contínuo até o rollback. É o mesmo
 padrão de “falha, recupera, falha de novo, até todos os nós gerarem o arquivo ruim” do artigo. Os
 tempos não se comparam diretamente. A miniatura comprime a linha do tempo (3 s por geração contra
 cinco minutos), e o rollback é programado, enquanto no caso real ele dependeu de horas de
-diagnóstico. Por isso a duração do impacto (38.00 s contra 11:28 → 14:30) e a recuperação
-(de nenhum erro depois do rollback a 0.80 s, contra a cauda até 17:06) mostram só o mecanismo, não a escala. A porcentagem de erro na
-janela de falha (82.26 %) é um limite superior, porque o único proxy recebe 100% do tráfego (ver
+diagnóstico. Por isso a duração do impacto (38.00 s, <code>logs/sem_mitigacao_v2/metricas.txt</code>, contra 11:28 → 14:30) e a recuperação
+(de nenhum erro depois do rollback, no mesmo arquivo, a 0.80 s em <code>logs/sem_mitigacao_seed7_v2/metricas.txt</code>, contra a cauda até 17:06) mostram só o mecanismo, não a escala. A porcentagem de erro na
+janela de falha (82.26 %, <code>logs/sem_mitigacao_v2/metricas.txt</code>) é um limite superior, porque o único proxy recebe 100% do tráfego (ver
 limitações).</p>
 
 <p><b>O que saiu diferente do esperado.</b> Esperávamos que o healthcheck do Docker apontasse o
@@ -201,7 +201,7 @@ a oscilação era um acaso:</p>
 </table>
 <p>O tempo até a falha e o número de oscilações dependem de qual nó é sorteado. Com
 <code>SEED=7</code>, o primeiro arquivo ruim saiu logo depois da atualização do primeiro nó, e o primeiro
-erro veio 0.79 s após a mudança. Já a porcentagem total de erro variou pouco (de 40.00 % a 41.38 %).
+erro veio 0.79 s após a mudança (<code>logs/sem_mitigacao_seed7_v2/metricas.txt</code>). Já a porcentagem total de erro variou pouco: de 40.00 % (<code>logs/sem_mitigacao_v2/metricas.txt</code>) a 41.38 % (<code>logs/sem_mitigacao_seed7_v2/metricas.txt</code>).
 Isso acontece porque, quando todos os nós estão atualizados, todo arquivo sai ruim, e o fim da falha
 depende só do rollback programado. A oscilação torna o <i>início</i> do incidente imprevisível
 (parece intermitente e confunde o diagnóstico, como a suspeita de DDoS no caso real), mas não muda
@@ -258,7 +258,7 @@ configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última c
 <p>Os mesmos 11 arquivos ruins chegaram ao proxy nas duas execuções. Com a validação, todos foram
 rejeitados (<code>logs/com_mitigacao_v2/proxy.log</code>: 11 linhas <code>REJEITADO</code>), e o cliente recebeu
 só respostas 200. Há um custo: a partir da versão 12, o proxy ficou parado na versão 11 até o rollback
-(<code>REJEITADO ... mantendo_versao=11</code>, 9 vezes) e não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
+(<code>REJEITADO ... mantendo_versao=11</code>, 9 vezes no mesmo arquivo) e não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
 problema de quem gera o arquivo, se ninguém monitorar as rejeições.</p>
 
 <p><b>Recomendação final.</b> Recomendamos tratar toda configuração interna como entrada não
@@ -267,7 +267,7 @@ ambiente: <code>LOTE</code>, <code>PORT</code> (inteiro entre 1 e 65535), <code>
 <code>PG_POOL_MAX</code> e <code>CACHE_TTL_MS</code>. Um valor inválido deve impedir o processo de
 subir, com uma mensagem clara, em vez de virar <code>NaN</code> ou 0. A segunda medida é dar ao worker um
 sinal de saúde que reflita trabalho feito (por exemplo, o horário da última rodada sem erro) e um alerta
-quando a fila parar de andar. Na miniatura, a validação levou o erro de 40.00 % para 0.00 %, mas só
+quando a fila parar de andar. Na miniatura, a validação levou o erro de 40.00 % para 0.00 % (<code>logs/comparacao_sem_mitigacao_v2_vs_com_mitigacao_v2.txt</code>), mas só
 funciona se as rejeições gerarem alerta: um sistema que rejeita configurações em silêncio troca uma queda
 visível por uma configuração congelada que ninguém percebe.</p>
 
