@@ -19,7 +19,7 @@ da IA:
   - nunca editar `logs/` depois de gerado;
   - avisar antes de cada passo grande.
 - **Ambiente:** a equipe ligou o Docker Desktop e ativou a integração com o WSL quando o
-  Docker não foi encontrado (Erro 2).
+  Docker não foi encontrado (ver "Problema de ambiente").
 - **Projeto da Parte D:** a equipe corrigiu a IA, que tinha usado o projeto `mercado-de-jogadores`,
   e indicou o projeto da disciplina, o `Marketplace-da-economia-criativa`.
 - **Equipe e artigo:** a equipe conferiu no mural da turma que o artigo 3 tinha só uma outra equipe
@@ -53,9 +53,8 @@ e a equipe reorganizou o repositório com `git mv`. Também trocamos os placehol
 registrar os erros reais no IA.md e preencher as tabelas das Partes C e D só com os valores
 dos arquivos de métricas, sem editar `logs/`.
 **Resposta da IA:** organizou o repositório e rodou as duas execuções e a comparação.
-Preencheu as tabelas e listou o que pareceu inesperado nos logs. Encontrou e corrigiu os
-erros 1 e 2.
-**Aceitamos:** as execuções, as tabelas preenchidas e as correções dos erros 1 e 2.
+Preencheu as tabelas e listou o que pareceu inesperado nos logs. Encontrou e corrigiu o erro 1.
+**Aceitamos:** as execuções, as tabelas preenchidas e a correção do erro 1.
 **Mudamos:** a IA não conseguia rodar o Docker. A equipe ativou a integração WSL no Docker
 Desktop e mandou continuar.
 **Descartamos:** neste prompt, a equipe não deixou a IA escrever o parágrafo da surpresa nem
@@ -77,7 +76,7 @@ e a correção do projeto da Parte D.
 - conferiu cada citação da Parte A no artigo original;
 - rodou duas execuções extras com `SEED` diferente;
 - achou o trecho do projeto para a Parte D e testou o comportamento no Node;
-- corrigiu o erro 3;
+- corrigiu o erro 2;
 - redigiu o laudo completo, desenhou o diagrama e gerou o PDF;
 - testou o README num clone limpo.
 **Aceitamos:** o texto do laudo e o diagrama.
@@ -107,19 +106,6 @@ novo `git add` + `git update-index --chmod=+x` e corrigimos o commit com `git co
 Nos demais arquivos convertemos CRLF para LF com `sed -i 's/\r$//'`.
 
 ### Erro 2
-**O que aconteceu:** o Docker não estava acessível no terminal Linux (WSL 2), então
-`./rodar.sh` não podia rodar. O Docker Desktop estava instalado no Windows, mas desligado e
-sem a integração com o WSL ativada.
-**Como descobrimos:** `docker --version` no WSL respondeu
-`The command 'docker' could not be found in this WSL 2 distro. We recommend to activate the WSL integration in Docker Desktop settings.`
-Ao tentar o `docker.exe` do Windows, apareceu
-`failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running`.
-Usar o `docker.exe` do Windows não resolveria, porque o `rodar.sh` monta `$PWD` (`/mnt/c/...`) como volume.
-**Correção:** abrimos o Docker Desktop e ativamos a distro em Settings → Resources → WSL
-Integration. Depois disso `docker --version` (29.7.2) e `docker compose version` (v5.5.1)
-funcionaram no WSL e as duas execuções rodaram.
-
-### Erro 3
 **O que aconteceu:** o comando de comparação
 (`python analisar.py logs/sem_mitigacao logs/com_mitigacao`) recalculava e **regravava** o
 `metricas.txt` de cada execução. Isso alterava saídas brutas que já tinham sido geradas.
@@ -130,7 +116,7 @@ iguais aos que o `rodar.sh` mostrou, mas o arquivo tinha sido reescrito.
 **Correção:** em `analisar.py`, o `metricas.txt` e o arquivo de comparação só são gravados se
 ainda não existirem. Se já existirem, o script avisa `ja existe; mantido sem alteracao`.
 
-### Erro 4
+### Erro 3
 **O que aconteceu:** o passo a passo do README mandava rodar `./rodar.sh sem_mitigacao off`.
 Depois que as saídas brutas foram para o repositório, esse comando passou a falhar para quem
 clona o projeto, porque a pasta `logs/sem_mitigacao` já existe e o script se recusa a
@@ -144,3 +130,21 @@ exit=1
 **Correção:** o README agora usa nomes novos (`prof_sem_mitigacao`, `prof_com_mitigacao`),
 explica por que as pastas originais não podem ser reusadas e lista quais pastas de `logs/`
 o laudo cita.
+
+## Problema de ambiente (não foi erro da IA)
+
+Registrado aqui porque bloqueou a execução, mas a causa era a configuração da máquina, não
+o código gerado pela IA.
+
+### Docker indisponível no WSL
+**O que aconteceu:** o Docker não estava acessível no terminal Linux (WSL 2), então
+`./rodar.sh` não podia rodar. O Docker Desktop estava instalado no Windows, mas desligado e
+sem a integração com o WSL ativada.
+**Como descobrimos:** `docker --version` no WSL respondeu
+`The command 'docker' could not be found in this WSL 2 distro. We recommend to activate the WSL integration in Docker Desktop settings.`
+Ao tentar o `docker.exe` do Windows, apareceu
+`failed to connect to the docker API at npipe:////./pipe/dockerDesktopLinuxEngine; check if the path is correct and if the daemon is running`.
+Usar o `docker.exe` do Windows não resolveria, porque o `rodar.sh` monta `$PWD` (`/mnt/c/...`) como volume.
+**Correção:** abrimos o Docker Desktop e ativamos a distro em Settings → Resources → WSL
+Integration. Depois disso `docker --version` (29.7.2) e `docker compose version` (v5.5.1)
+funcionaram no WSL e as duas execuções rodaram.
