@@ -9,8 +9,11 @@ if [ -e "logs/$RUN_ID" ]; then
 fi
 mkdir -p "logs/$RUN_ID"
 export RUN_ID MITIGACAO
+# derruba os containers mesmo se o "up" falhar (com set -e o script pararia antes do down)
+trap 'docker compose down >/dev/null 2>&1 || true' EXIT
 { echo "data: $(date -u +%Y-%m-%dT%H:%M:%SZ)"; echo "RUN_ID=$RUN_ID"; echo "MITIGACAO=$MITIGACAO"
   echo "SEED=${SEED:-42}"; docker --version; docker compose version; } > "logs/$RUN_ID/config.txt"
 docker compose up --abort-on-container-exit --exit-code-from cliente 2>&1 | tee "logs/$RUN_ID/compose.log"
 docker compose down
+trap - EXIT
 docker run --rm -v "$PWD":/w -w /w python:3.12-slim python analisar.py "logs/$RUN_ID"
