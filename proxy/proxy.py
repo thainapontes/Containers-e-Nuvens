@@ -43,8 +43,9 @@ def aplicar(cfg):
     versao, features = cfg["versao"], cfg["features"]
     n = len(features)
     if MITIGACAO and n > LIMITE:
-        log("REJEITADO", versao=versao, n=n, limite=LIMITE,
-            mantendo_versao=estado["versao"])
+        with lock:
+            mantida = estado["versao"]   # lida sob o lock, como no caminho CARREGADO
+        log("REJEITADO", versao=versao, n=n, limite=LIMITE, mantendo_versao=mantida)
         return
     with lock:
         try:

@@ -168,7 +168,7 @@ limitações).</p>
 proxy como <code>unhealthy</code> durante a falha. Não apontou. Durante todo o pânico, o proxy
 respondeu 500 em 321 requisições (<code>logs/sem_mitigacao/metricas.txt</code>), mas o
 <code>compose.log</code> da mesma execução não tem nenhuma linha <code>unhealthy</code>. A explicação
-está no código: o <code>/health</code> do proxy (<code>proxy/proxy.py</code>, linhas 87–89) só
+está no código: o <code>/health</code> do proxy (<code>proxy/proxy.py</code>, linhas 88–90) só
 confirma que o processo está vivo e sempre responde 200. O processo de fato não morreu, só o módulo
 de bots falhava. Para o orquestrador, o serviço estava saudável enquanto devolvia erro para todos.
 É o mesmo ponto cego do caso real: a falha não derrubou máquinas, derrubou respostas. Um segundo
@@ -231,7 +231,7 @@ PostgreSQL (<code>pg_isready</code>); a API e o worker não têm nenhum.</p>
 
 <p><b>Mitigação implementada na miniatura:</b> o limite é validado <i>antes</i> de aplicar a
 configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última configuração boa
-(<code>proxy/proxy.py</code>, linhas 45–46, ativada com <code>MITIGACAO=on</code>). Isso corresponde
+(<code>proxy/proxy.py</code>, linhas 45–49, ativada com <code>MITIGACAO=on</code>). Isso corresponde
 à primeira ação corretiva do artigo. Mesmos parâmetros e mesmo <code>SEED</code> nas duas execuções:</p>
 
 <table>
