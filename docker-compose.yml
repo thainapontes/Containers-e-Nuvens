@@ -5,6 +5,7 @@ services:
   gerador:                       # job que gera o feature file a partir do ClickHouse
     image: python:3.12-slim
     command: ["python", "-u", "/app/gerador.py"]
+    user: "${HOST_UID:-0}:${HOST_GID:-0}"   # o rodar.sh passa o usuário de quem roda; sem ele, root
     volumes:
       - ./gerador:/app:ro
       - ./logs/${RUN_ID:-teste}:/logs
@@ -25,6 +26,7 @@ services:
   proxy:                         # proxy central (FL2) com o módulo Bot Management
     image: python:3.12-slim
     command: ["python", "-u", "/app/proxy.py"]
+    user: "${HOST_UID:-0}:${HOST_GID:-0}"   # o rodar.sh passa o usuário de quem roda; sem ele, root
     volumes:
       - ./proxy:/app:ro
       - ./logs/${RUN_ID:-teste}:/logs
@@ -44,6 +46,7 @@ services:
   cliente:                       # tráfego dos usuários
     image: python:3.12-slim
     command: ["python", "-u", "/app/cliente.py"]
+    user: "${HOST_UID:-0}:${HOST_GID:-0}"   # o rodar.sh passa o usuário de quem roda; sem ele, root
     volumes:
       - ./cliente:/app:ro
       - ./logs/${RUN_ID:-teste}:/logs
