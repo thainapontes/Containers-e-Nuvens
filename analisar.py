@@ -6,7 +6,7 @@ Uso:
   python analisar.py logs/sem_mitigacao logs/com_mitigacao   # também gera a comparação
 
 Saídas (para citar no laudo):
-  logs/<execucao>/metricas.txt
+  logs/<execucao>/metricas.txt  (usa saude.log, se existir, para o estado do healthcheck)
   logs/comparacao_<a>_vs_<b>.txt   (quando duas execuções são passadas)
 """
 import csv
@@ -98,6 +98,18 @@ def analisar(pasta):
         m["tempo_ate_recuperacao (rollback -> ultimo erro)"] = ("sem erro", "cliente.csv")
     m["duracao_do_impacto (1o erro -> ultimo erro)"] = (
         seg(erros[-1] - erros[0]) if erros else "sem erro", "cliente.csv")
+    # saude.log (gravado pelo rodar.sh): estado do healthcheck do proxy, 1 amostra por segundo
+    saude = ler_eventos(os.path.join(pasta, "saude.log"))
+    if not saude:
+        m["healthcheck_do_proxy_durante_o_impacto"] = ("sem saude.log", "saude.log")
+    elif not erros:
+        m["healthcheck_do_proxy_durante_o_impacto"] = ("sem erro", "saude.log")
+    else:
+        janela = [st for t, st, _ in saude if int(erros[0]) <= t <= erros[-1]]
+        cont = {st: janela.count(st) for st in sorted(set(janela))}
+        m["healthcheck_do_proxy_durante_o_impacto"] = (
+            " ".join(f"{k}={v}" for k, v in cont.items()) + f" (de {len(janela)} amostras)",
+            "saude.log + cliente.csv")
 
     largura = max(len(k) for k in m)
     linhas = [f"Execucao: {pasta}", ""]

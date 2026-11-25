@@ -1,0 +1,16 @@
+Execucao: logs/sem_mitigacao_seed7_v2
+
+requisicoes_total                                       800                              fonte: cliente.csv
+requisicoes_com_erro                                    331                              fonte: cliente.csv
+porcentagem_erro                                        41.38 %                          fonte: cliente.csv
+porcentagem_erro_entre_1o_arquivo_ruim_e_rollback       71.78 % (323/450)                fonte: cliente.csv + gerador.log
+blocos_de_erro (oscilacoes)                             4                                fonte: cliente.csv
+arquivos_ruins_publicados                               11                               fonte: gerador.log
+eventos_PANICO_no_proxy                                 11                               fonte: proxy.log
+arquivos_REJEITADOS_pelo_proxy                          0                                fonte: proxy.log
+tempo_ate_falha (mudanca -> 1o erro)                    0.79 s                           fonte: gerador.log MUDANCA_INICIADA + cliente.csv
+tempo_ate_falha (1o arquivo ruim publicado -> 1o erro)  0.74 s                           fonte: gerador.log PUBLICADO tipo=ruim + cliente.csv
+propagacao (1o arquivo ruim -> PANICO no proxy)         0.66 s                           fonte: gerador.log + proxy.log
+tempo_ate_recuperacao (rollback -> ultimo erro)         0.80 s                           fonte: gerador.log ROLLBACK + cliente.csv
+duracao_do_impacto (1o erro -> ultimo erro)             45.00 s                          fonte: cliente.csv
+healthcheck_do_proxy_durante_o_impacto                  healthy=41 (de 41 amostras)      fonte: saude.log + cliente.csv

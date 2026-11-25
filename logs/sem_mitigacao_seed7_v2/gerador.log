@@ -1,0 +1,30 @@
+1795632986.306 INICIO n_features=120 n_nos=5 t_mudanca=15.0 passo_rollout=6.0 intervalo=3.0 t_rollback=60.0 seed=7
+1795632986.309 PUBLICADO versao=1 n=120 no=0 tipo=bom
+1795632989.328 PUBLICADO versao=2 n=120 no=2 tipo=bom
+1795632992.344 PUBLICADO versao=3 n=120 no=1 tipo=bom
+1795632995.356 PUBLICADO versao=4 n=120 no=3 tipo=bom
+1795632998.374 PUBLICADO versao=5 n=120 no=0 tipo=bom
+1795633001.335 MUDANCA_INICIADA t=15.0
+1795633001.335 NO_ATUALIZADO no=0 atualizados=1/5
+1795633001.387 PUBLICADO versao=6 n=240 no=0 tipo=ruim
+1795633004.397 PUBLICADO versao=7 n=120 no=4 tipo=bom
+1795633007.359 NO_ATUALIZADO no=1 atualizados=2/5
+1795633007.410 PUBLICADO versao=8 n=240 no=0 tipo=ruim
+1795633010.422 PUBLICADO versao=9 n=120 no=2 tipo=bom
+1795633013.383 NO_ATUALIZADO no=2 atualizados=3/5
+1795633013.434 PUBLICADO versao=10 n=120 no=4 tipo=bom
+1795633016.448 PUBLICADO versao=11 n=240 no=0 tipo=ruim
+1795633019.412 NO_ATUALIZADO no=3 atualizados=4/5
+1795633019.462 PUBLICADO versao=12 n=120 no=4 tipo=bom
+1795633022.474 PUBLICADO versao=13 n=240 no=1 tipo=ruim
+1795633025.437 NO_ATUALIZADO no=4 atualizados=5/5
+1795633025.488 PUBLICADO versao=14 n=240 no=0 tipo=ruim
+1795633028.498 PUBLICADO versao=15 n=240 no=0 tipo=ruim
+1795633031.511 PUBLICADO versao=16 n=240 no=3 tipo=ruim
+1795633034.523 PUBLICADO versao=17 n=240 no=3 tipo=ruim
+1795633037.541 PUBLICADO versao=18 n=240 no=0 tipo=ruim
+1795633040.555 PUBLICADO versao=19 n=240 no=1 tipo=ruim
+1795633043.568 PUBLICADO versao=20 n=240 no=0 tipo=ruim
+1795633046.328 PUBLICADO versao=21 n=120 no=- tipo=bom motivo=rollback
+1795633046.328 ROLLBACK t=60.0
+1795633046.328 GERACAO_PARADA

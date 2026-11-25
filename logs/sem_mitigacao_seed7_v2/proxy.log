@@ -1,0 +1,22 @@
+1795632988.995 INICIO limite=200 mitigacao=off poll=1.0
+1795632989.013 CARREGADO versao=1 n=120
+1795632990.016 CARREGADO versao=2 n=120
+1795632993.022 CARREGADO versao=3 n=120
+1795632996.030 CARREGADO versao=4 n=120
+1795632999.036 CARREGADO versao=5 n=120
+1795633002.044 PANICO versao=6 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633005.053 CARREGADO versao=7 n=120
+1795633008.063 PANICO versao=8 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633011.070 CARREGADO versao=9 n=120
+1795633014.078 CARREGADO versao=10 n=120
+1795633017.087 PANICO versao=11 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633020.098 CARREGADO versao=12 n=120
+1795633023.105 PANICO versao=13 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633026.121 PANICO versao=14 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633029.130 PANICO versao=15 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633032.137 PANICO versao=16 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633035.145 PANICO versao=17 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633038.152 PANICO versao=18 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633041.160 PANICO versao=19 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633044.169 PANICO versao=20 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+1795633047.181 CARREGADO versao=21 n=120

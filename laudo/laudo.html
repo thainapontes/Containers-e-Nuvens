@@ -130,28 +130,30 @@ Cada container grava seu log em <code>logs/&lt;execução&gt;/</code>.</div>
 </table>
 
 <h2>Parte C — O experimento</h2>
-<p>Comandos: <code>./rodar.sh sem_mitigacao off</code> e <code>./rodar.sh com_mitigacao on</code>,
+<p>Comandos: <code>./rodar.sh sem_mitigacao_v2 off</code> e <code>./rodar.sh com_mitigacao_v2 on</code>,
 seguidos da comparação (ver README). Parâmetros no <code>docker-compose.yml</code>:
 <code>T_MUDANCA</code> 15 s, <code>PASSO_ROLLOUT</code> 6 s, <code>INTERVALO_GERACAO</code> 3 s,
 <code>T_ROLLBACK</code> 60 s, <code>SEED</code> 42. A linha do tempo é comprimida: uma geração a cada
-3 s, contra cinco minutos no caso real.</p>
+3 s, contra cinco minutos no caso real. As execuções com sufixo <code>_v2</code> são as desta versão
+do laudo e incluem o <code>saude.log</code>; as anteriores, sem esse arquivo, continuam em <code>logs/</code>.</p>
 
 <table>
 <tr><th>Métrica</th><th>Miniatura</th><th>Fonte (log)</th><th>Caso real</th><th>Fonte (artigo)</th></tr>
-<tr><td>Tempo até a falha (mudança → 1º erro)</td><td class="n">7.10 s</td><td><code>logs/sem_mitigacao/metricas.txt</code></td><td>11:05 → 11:28</td><td>Tabela final</td></tr>
-<tr><td>Tempo até a falha (1º arquivo ruim → 1º erro)</td><td class="n">0.95 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
-<tr><td>Propagação (1º arquivo ruim → PANICO no proxy)</td><td class="n">0.89 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
-<tr><td>Tempo até a recuperação (rollback → último erro)</td><td class="n">0.16 s</td><td>idem</td><td>14:24 → 14:30 (impacto principal); até 17:06 para tudo</td><td>Tabela final</td></tr>
-<tr><td>Duração do impacto (1º erro → último erro)</td><td class="n">38.09 s</td><td>idem</td><td>11:28 → 14:30</td><td>Tabela final</td></tr>
-<tr><td>% de requisições com erro (execução inteira)</td><td class="n">40.07 %</td><td>idem</td><td>não informado em número (só o gráfico de 5xx)</td><td>Seção <i>The outage</i></td></tr>
-<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.01 % (319/389)</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Tempo até a falha (mudança → 1º erro)</td><td class="n">6.93 s</td><td><code>logs/sem_mitigacao_v2/metricas.txt</code></td><td>11:05 → 11:28</td><td>Tabela final</td></tr>
+<tr><td>Tempo até a falha (1º arquivo ruim → 1º erro)</td><td class="n">0.81 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Propagação (1º arquivo ruim → PANICO no proxy)</td><td class="n">0.77 s</td><td>idem</td><td>não informado</td><td>—</td></tr>
+<tr><td>Tempo até a recuperação (rollback → último erro)</td><td>último erro 0.08 s <i>antes</i> do rollback (0.80 s com <code>SEED=7</code>)</td><td>idem; <code>logs/sem_mitigacao_seed7_v2/metricas.txt</code></td><td>14:24 → 14:30 (impacto principal); até 17:06 para tudo</td><td>Tabela final</td></tr>
+<tr><td>Duração do impacto (1º erro → último erro)</td><td class="n">38.00 s</td><td>idem</td><td>11:28 → 14:30</td><td>Tabela final</td></tr>
+<tr><td>% de requisições com erro (execução inteira)</td><td class="n">40.00 %</td><td>idem</td><td>não informado em número (só o gráfico de 5xx)</td><td>Seção <i>The outage</i></td></tr>
+<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.26 % (320/389)</td><td>idem</td><td>não informado</td><td>—</td></tr>
 <tr><td>Número de oscilações (blocos de erro)</td><td class="n">3</td><td>idem</td><td>“spike, and subsequent fluctuations”</td><td>Seção <i>The outage</i></td></tr>
+<tr><td>Healthcheck do proxy durante o impacto</td><td>healthy=33 (de 33 amostras)</td><td>idem (calculado de <code>saude.log</code>)</td><td>não informado</td><td>—</td></tr>
 </table>
 
 <p><b>Comparação.</b> O mecanismo se repetiu na miniatura. Os 11 arquivos ruins publicados
 (<code>gerador.log</code>, todos com <code>n=240</code>) geraram 11 eventos <code>PANICO</code> no
 <code>proxy.log</code>, todos com <code>erro=IndexError_alem_do_limite_pre_alocado</code>. A falha
-também se propagou rápido: o primeiro erro chegou ao cliente 0.95 s depois da publicação do primeiro
+também se propagou rápido: o primeiro erro chegou ao cliente 0.81 s depois da publicação do primeiro
 arquivo ruim, praticamente o intervalo de leitura do proxy. A oscilação descrita na seção
 <i>The outage</i> também apareceu, com 3 blocos de erro. Enquanto só parte dos nós estava atualizada,
 o <code>gerador.log</code> alterna arquivos ruins e bons (versões 8 a 11); a partir da versão 12, com
@@ -159,38 +161,47 @@ o <code>gerador.log</code> alterna arquivos ruins e bons (versões 8 a 11); a pa
 padrão de “falha, recupera, falha de novo, até todos os nós gerarem o arquivo ruim” do artigo. Os
 tempos não se comparam diretamente. A miniatura comprime a linha do tempo (3 s por geração contra
 cinco minutos), e o rollback é programado, enquanto no caso real ele dependeu de horas de
-diagnóstico. Por isso a duração do impacto (38.09 s contra 11:28 → 14:30) e a recuperação
-(0.16 s contra a cauda até 17:06) mostram só o mecanismo, não a escala. A porcentagem de erro na
-janela de falha (82.01 %) é um limite superior, porque o único proxy recebe 100% do tráfego (ver
+diagnóstico. Por isso a duração do impacto (38.00 s contra 11:28 → 14:30) e a recuperação
+(de nenhum erro depois do rollback a 0.80 s, contra a cauda até 17:06) mostram só o mecanismo, não a escala. A porcentagem de erro na
+janela de falha (82.26 %) é um limite superior, porque o único proxy recebe 100% do tráfego (ver
 limitações).</p>
 
 <p><b>O que saiu diferente do esperado.</b> Esperávamos que o healthcheck do Docker apontasse o
-proxy como <code>unhealthy</code> durante a falha. Não apontou. Durante todo o pânico, o proxy
-respondeu 500 em 321 requisições (<code>logs/sem_mitigacao/metricas.txt</code>), mas o
-<code>compose.log</code> da mesma execução não tem nenhuma linha <code>unhealthy</code>. A explicação
-está no código: o <code>/health</code> do proxy (<code>proxy/proxy.py</code>, linhas 88–90) só
-confirma que o processo está vivo e sempre responde 200. O processo de fato não morreu, só o módulo
-de bots falhava. Para o orquestrador, o serviço estava saudável enquanto devolvia erro para todos.
-É o mesmo ponto cego do caso real: a falha não derrubou máquinas, derrubou respostas. Um segundo
-detalhe: houve erros <i>depois</i> do rollback. O <code>ROLLBACK</code> foi registrado em
-<code>1795024901.792</code> (<code>gerador.log</code>), mas o cliente ainda recebeu 500 em
-<code>1795024901.856</code> e <code>1795024901.956</code> (<code>cliente.csv</code>). O proxy só
-carregou o arquivo bom em <code>1795024902.032</code> (<code>proxy.log</code>, versão 21), porque lê a
-configuração uma vez por segundo. Por isso o total de erros (321) é maior que os erros dentro da
-janela de falha (319): o rollback não vale até o último consumidor ler o arquivo novo.</p>
+proxy como <code>unhealthy</code> durante a falha. Não apontou. O <code>rodar.sh</code> grava em
+<code>saude.log</code> o estado do healthcheck do proxy uma vez por segundo. Nas 33 amostras feitas
+entre o primeiro e o último erro, todas registram <code>healthy</code>
+(<code>logs/sem_mitigacao_v2/metricas.txt</code>, calculado de <code>saude.log</code>), enquanto o proxy
+respondia 500 em 320 requisições. A explicação está no código: o <code>/health</code> do proxy
+(<code>proxy/proxy.py</code>, linhas 88–90) só confirma que o processo está vivo e sempre responde 200.
+O processo não morreu, só o módulo de bots falhava. Para o orquestrador, o serviço estava saudável
+enquanto devolvia erro para todos. É o mesmo ponto cego do caso real: a falha não derrubou máquinas,
+derrubou respostas. Na primeira versão deste laudo, usamos como evidência a falta de linhas
+<code>unhealthy</code> no <code>compose.log</code>. Isso não prova nada: o <code>docker compose up</code>
+só registra a saúde dos containers na subida, quando o <code>depends_on</code> espera por eles. Por isso
+passamos a gravar o <code>saude.log</code>.</p>
+
+<p>Um segundo detalhe: o rollback só vale quando o proxy lê o arquivo novo, e isso depende do momento
+da leitura, feita uma vez por segundo. Com <code>SEED=7</code>, o <code>ROLLBACK</code> foi registrado em
+<code>1795633046.328</code> (<code>gerador.log</code>), mas o proxy só carregou o arquivo bom em
+<code>1795633047.181</code> (<code>proxy.log</code>, versão 21). Nesse intervalo, o cliente ainda recebeu
+500 de <code>1795633046.426</code> a <code>1795633047.126</code> (<code>cliente.csv</code>), e por isso
+o total de erros (331) é maior que os erros na janela até o rollback (323). Com <code>SEED=42</code>, o
+proxy leu o arquivo bom logo em seguida (<code>ROLLBACK</code> em <code>1795632824.596</code>, versão 21
+carregada em <code>1795632824.609</code>), e nenhum erro veio depois do rollback. O mesmo mecanismo
+dá tempos de recuperação diferentes conforme a fase da leitura periódica.</p>
 
 <p><b>Repetição com outros <code>SEED</code>.</b> O <code>SEED</code> decide qual nó responde a cada
 geração. Repetimos a execução sem mitigação com <code>SEED=7</code> e <code>SEED=2025</code> para ver se
 a oscilação era um acaso:</p>
 <table>
 <tr><th>Execução</th><th>Mudança → 1º erro</th><th>Blocos de erro</th><th>% de erro</th><th>Duração do impacto</th><th>Fonte</th></tr>
-<tr><td><code>SEED=42</code></td><td class="n">7.10 s</td><td class="n">3</td><td class="n">40.07 %</td><td class="n">38.09 s</td><td><code>logs/sem_mitigacao/metricas.txt</code></td></tr>
-<tr><td><code>SEED=7</code></td><td class="n">0.89 s</td><td class="n">4</td><td class="n">40.20 %</td><td class="n">44.19 s</td><td><code>logs/sem_mitigacao_seed7/metricas.txt</code></td></tr>
-<tr><td><code>SEED=2025</code></td><td class="n">3.94 s</td><td class="n">2</td><td class="n">40.20 %</td><td class="n">41.20 s</td><td><code>logs/sem_mitigacao_seed2025/metricas.txt</code></td></tr>
+<tr><td><code>SEED=42</code></td><td class="n">6.93 s</td><td class="n">3</td><td class="n">40.00 %</td><td class="n">38.00 s</td><td><code>logs/sem_mitigacao_v2/metricas.txt</code></td></tr>
+<tr><td><code>SEED=7</code></td><td class="n">0.79 s</td><td class="n">4</td><td class="n">41.38 %</td><td class="n">45.00 s</td><td><code>logs/sem_mitigacao_seed7_v2/metricas.txt</code></td></tr>
+<tr><td><code>SEED=2025</code></td><td class="n">3.97 s</td><td class="n">2</td><td class="n">40.12 %</td><td class="n">41.00 s</td><td><code>logs/sem_mitigacao_seed2025_v2/metricas.txt</code></td></tr>
 </table>
 <p>O tempo até a falha e o número de oscilações dependem de qual nó é sorteado. Com
 <code>SEED=7</code>, o primeiro arquivo ruim saiu logo depois da atualização do primeiro nó, e o primeiro
-erro veio 0.89 s após a mudança. Já a porcentagem total de erro quase não mudou (40.07 % e 40.20 %).
+erro veio 0.79 s após a mudança. Já a porcentagem total de erro variou pouco (de 40.00 % a 41.38 %).
 Isso acontece porque, quando todos os nós estão atualizados, todo arquivo sai ruim, e o fim da falha
 depende só do rollback programado. A oscilação torna o <i>início</i> do incidente imprevisível
 (parece intermitente e confunde o diagnóstico, como a suspeita de DDoS no caso real), mas não muda
@@ -236,16 +247,16 @@ configuração. Um arquivo inválido é rejeitado, e o proxy mantém a última c
 
 <table>
 <tr><th>Métrica</th><th>Sem mitigação</th><th>Com mitigação</th><th>Fonte</th></tr>
-<tr><td>% de requisições com erro</td><td class="n">40.07 %</td><td class="n">0.00 %</td><td><code>logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt</code></td></tr>
-<tr><td>Requisições com erro</td><td class="n">321</td><td class="n">0</td><td>idem</td></tr>
-<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.01 % (319/389)</td><td class="n">0.00 % (0/388)</td><td>idem</td></tr>
+<tr><td>% de requisições com erro</td><td class="n">40.00 %</td><td class="n">0.00 %</td><td><code>logs/comparacao_sem_mitigacao_v2_vs_com_mitigacao_v2.txt</code></td></tr>
+<tr><td>Requisições com erro</td><td class="n">320</td><td class="n">0</td><td>idem</td></tr>
+<tr><td>% de erro entre o 1º arquivo ruim e o rollback</td><td class="n">82.26 % (320/389)</td><td class="n">0.00 % (0/390)</td><td>idem</td></tr>
 <tr><td>Blocos de erro (oscilações)</td><td class="n">3</td><td class="n">0</td><td>idem</td></tr>
 <tr><td>Arquivos ruins publicados</td><td class="n">11</td><td class="n">11</td><td>idem</td></tr>
 <tr><td>Eventos <code>PANICO</code></td><td class="n">11</td><td class="n">0</td><td>idem</td></tr>
 <tr><td>Arquivos <code>REJEITADOS</code></td><td class="n">0</td><td class="n">11</td><td>idem</td></tr>
 </table>
 <p>Os mesmos 11 arquivos ruins chegaram ao proxy nas duas execuções. Com a validação, todos foram
-rejeitados (<code>logs/com_mitigacao/proxy.log</code>: 11 linhas <code>REJEITADO</code>), e o cliente recebeu
+rejeitados (<code>logs/com_mitigacao_v2/proxy.log</code>: 11 linhas <code>REJEITADO</code>), e o cliente recebeu
 só respostas 200. Há um custo: a partir da versão 12, o proxy ficou parado na versão 11 até o rollback
 (<code>REJEITADO ... mantendo_versao=11</code>, 9 vezes) e não recebeu nenhuma configuração nova nesse período. A validação evita a queda, mas esconde o
 problema de quem gera o arquivo, se ninguém monitorar as rejeições.</p>
@@ -256,7 +267,7 @@ ambiente: <code>LOTE</code>, <code>PORT</code> (inteiro entre 1 e 65535), <code>
 <code>PG_POOL_MAX</code> e <code>CACHE_TTL_MS</code>. Um valor inválido deve impedir o processo de
 subir, com uma mensagem clara, em vez de virar <code>NaN</code> ou 0. A segunda medida é dar ao worker um
 sinal de saúde que reflita trabalho feito (por exemplo, o horário da última rodada sem erro) e um alerta
-quando a fila parar de andar. Na miniatura, a validação levou o erro de 40.07 % para 0.00 %, mas só
+quando a fila parar de andar. Na miniatura, a validação levou o erro de 40.00 % para 0.00 %, mas só
 funciona se as rejeições gerarem alerta: um sistema que rejeita configurações em silêncio troca uma queda
 visível por uma configuração congelada que ninguém percebe.</p>
 

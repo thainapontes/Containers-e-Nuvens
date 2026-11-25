@@ -30,9 +30,8 @@ docker run --rm -v "$PWD":/w -w /w python:3.12-slim \
   python analisar.py logs/prof_sem_mitigacao logs/prof_com_mitigacao
 ```
 
-> Use nomes novos (como `prof_...`). As pastas `logs/sem_mitigacao` e `logs/com_mitigacao` já
-> existem no repositório: são as execuções citadas no laudo, e o script se recusa a
-> sobrescrevê-las.
+> Use nomes novos (como `prof_...`). As pastas de `logs/` que já existem no repositório são
+> execuções citadas no laudo ou anteriores a ele, e o script se recusa a sobrescrevê-las.
 
 Cada execução cria `logs/<nome>/` com:
 
@@ -42,6 +41,7 @@ Cada execução cria `logs/<nome>/` com:
 | `proxy.log` | cada configuração carregada, `PANICO` ou `REJEITADO` |
 | `cliente.csv` | uma linha por requisição: horário (epoch), status HTTP, latência |
 | `compose.log` | saída completa do `docker compose up` |
+| `saude.log` | estado do healthcheck do proxy (`starting`/`healthy`/`unhealthy`), uma amostra por segundo |
 | `config.txt` | data, parâmetros e versão do Docker |
 | `metricas.txt` | métricas calculadas por `analisar.py` a partir dos arquivos acima |
 
@@ -53,6 +53,7 @@ Para repetir, use outro nome: `./rodar.sh sem_mitigacao_2 off`.
 - **Sem mitigação**: `proxy.log` mostra linhas `PANICO ... n=240 limite=200`, e o `cliente.csv`
   tem respostas `500` que somem e voltam (oscilação) até o `ROLLBACK` do gerador.
 - **Com mitigação**: `proxy.log` mostra `REJEITADO`, e o cliente só recebe `200`.
+- **Nos dois casos**: `saude.log` mostra o proxy `healthy` o tempo todo, inclusive durante os `500`.
 
 ## Rodar sem o script (PowerShell)
 
@@ -63,6 +64,8 @@ docker compose up --abort-on-container-exit --exit-code-from cliente
 docker compose down
 docker run --rm -v "${PWD}:/w" -w /w python:3.12-slim python analisar.py logs/$env:RUN_ID
 ```
+
+Sem o script, o `saude.log` não é gravado (a métrica do healthcheck sai como `sem saude.log`).
 
 ## Arquitetura
 
@@ -101,15 +104,17 @@ mesma sequência de arquivos bons e ruins.
 ## Laudo e execuções citadas
 
 - Laudo em PDF: [`laudo/laudo.pdf`](laudo/laudo.pdf) (fonte em `laudo/laudo.html`).
-- Execuções citadas no laudo (saídas brutas, não editadas):
+- Execuções citadas no laudo (saídas brutas, não editadas). As pastas sem `_v2`
+  (`sem_mitigacao`, `com_mitigacao`, `sem_mitigacao_seed7`, `sem_mitigacao_seed2025`) são da
+  versão anterior do laudo, feitas antes do `saude.log`, e ficaram como histórico:
 
 | Pasta | Comando |
 |---|---|
-| `logs/sem_mitigacao/` | `./rodar.sh sem_mitigacao off` (`SEED` 42) |
-| `logs/com_mitigacao/` | `./rodar.sh com_mitigacao on` (`SEED` 42) |
-| `logs/comparacao_sem_mitigacao_vs_com_mitigacao.txt` | `python analisar.py logs/sem_mitigacao logs/com_mitigacao` |
-| `logs/sem_mitigacao_seed7/` | `SEED=7 ./rodar.sh sem_mitigacao_seed7 off` |
-| `logs/sem_mitigacao_seed2025/` | `SEED=2025 ./rodar.sh sem_mitigacao_seed2025 off` |
+| `logs/sem_mitigacao_v2/` | `./rodar.sh sem_mitigacao_v2 off` (`SEED` 42) |
+| `logs/com_mitigacao_v2/` | `./rodar.sh com_mitigacao_v2 on` (`SEED` 42) |
+| `logs/comparacao_sem_mitigacao_v2_vs_com_mitigacao_v2.txt` | `python analisar.py logs/sem_mitigacao_v2 logs/com_mitigacao_v2` |
+| `logs/sem_mitigacao_seed7_v2/` | `SEED=7 ./rodar.sh sem_mitigacao_seed7_v2 off` |
+| `logs/sem_mitigacao_seed2025_v2/` | `SEED=2025 ./rodar.sh sem_mitigacao_seed2025_v2 off` |
 | `logs/parte_d/teste_lote_worker.txt` | worker do projeto `Marketplace-da-economia-criativa` com `LOTE=cinco` e `LOTE=5` (Parte D) |
 | `logs/parte_d/teste_port_env.txt` | `env.js` do mesmo projeto com `PORT` inválida; script em `logs/parte_d/teste_porta.mjs` (Parte D) |
 

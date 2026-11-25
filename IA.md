@@ -131,6 +131,21 @@ exit=1
 explica por que as pastas originais não podem ser reusadas e lista quais pastas de `logs/`
 o laudo cita.
 
+### Erro 4
+**O que aconteceu:** no parágrafo da surpresa (Parte C), a IA usou como prova de que o
+healthcheck não marcou o proxy como `unhealthy` a falta de linhas `unhealthy` no `compose.log`.
+Essa prova não vale: o `docker compose up` só mostra a saúde dos containers na subida, quando o
+`depends_on` espera por eles, e não registra mudanças depois disso.
+**Como descobrimos:** numa revisão do repositório, rodamos a miniatura gravando o estado do
+healthcheck do proxy a cada segundo com `docker inspect`. Depois repetimos com uma cópia
+temporária do `proxy.py` em que o `/health` responde 500 durante o pânico: o `docker inspect`
+passou a mostrar `unhealthy`, mas o `compose.log` continuou só com as duas linhas da subida
+(`Container ...-gerador-1 Healthy` e `Container ...-proxy-1 Healthy`).
+**Correção:** o `rodar.sh` agora grava `saude.log` (estado do healthcheck uma vez por segundo) e
+o `analisar.py` conta as amostras entre o primeiro e o último erro. Refizemos as execuções
+(`logs/*_v2`) e o laudo passou a citar `healthy=33 (de 33 amostras)` de
+`logs/sem_mitigacao_v2/metricas.txt`. As execuções antigas continuam em `logs/` como histórico.
+
 ## Problema de ambiente (não foi erro da IA)
 
 Registrado aqui porque bloqueou a execução, mas a causa era a configuração da máquina, não
@@ -148,3 +163,17 @@ Usar o `docker.exe` do Windows não resolveria, porque o `rodar.sh` monta `$PWD`
 **Correção:** abrimos o Docker Desktop e ativamos a distro em Settings → Resources → WSL
 Integration. Depois disso `docker --version` (29.7.2) e `docker compose version` (v5.5.1)
 funcionaram no WSL e as duas execuções rodaram.
+
+## Revisão final do repositório
+
+Antes da entrega, pedimos à IA uma revisão do repositório contra o enunciado e a rubrica, e
+depois que validasse cada ponto e aplicasse as correções, um commit por ponto.
+**Aceitamos:** `.gitattributes` com LF, remoção do rascunho `ROTEIRO_LAUDO.md`, links da Parte D
+fixos no commit testado, separação do problema de ambiente, `trap` no `rodar.sh`, usuário dos
+containers, leitura sob lock no `proxy.py` e o `saude.log` (Erro 4).
+**Mudamos:** a sugestão de rodar os containers com `user: ${UID}:${GID}` virou
+`${HOST_UID:-0}:${HOST_GID:-0}`, exportado pelo `rodar.sh`, porque o Bash não exporta `UID` e,
+sem o script, o `docker compose up` direto passaria a falhar ao gravar em `logs/`.
+**Descartamos:** juntar a função `log()` do gerador e do proxy num arquivo só, porque cada
+container monta apenas a própria pasta.
+

@@ -1,0 +1,15 @@
+metrica                                                 sem_mitigacao_v2                   com_mitigacao_v2
+requisicoes_total                                       800                                800
+requisicoes_com_erro                                    320                                0
+porcentagem_erro                                        40.00 %                            0.00 %
+porcentagem_erro_entre_1o_arquivo_ruim_e_rollback       82.26 % (320/389)                  0.00 % (0/390)
+blocos_de_erro (oscilacoes)                             3                                  0
+arquivos_ruins_publicados                               11                                 11
+eventos_PANICO_no_proxy                                 11                                 0
+arquivos_REJEITADOS_pelo_proxy                          0                                  11
+tempo_ate_falha (mudanca -> 1o erro)                    6.93 s                             sem erro
+tempo_ate_falha (1o arquivo ruim publicado -> 1o erro)  0.81 s                             sem erro
+propagacao (1o arquivo ruim -> PANICO no proxy)         0.77 s                             n/a
+tempo_ate_recuperacao (rollback -> ultimo erro)         ultimo erro foi 0.08 s ANTES do rollback sem erro
+duracao_do_impacto (1o erro -> ultimo erro)             38.00 s                            sem erro
+healthcheck_do_proxy_durante_o_impacto                  healthy=33 (de 33 amostras)        sem erro

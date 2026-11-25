@@ -1,0 +1,82 @@
+ Network repo_publica Creating 
+ Container repo-gerador-1 Creating 
+ Network repo_publica Created 
+ Container repo-gerador-1 Created 
+ Container repo-proxy-1 Creating 
+ Container repo-proxy-1 Created 
+ Container repo-cliente-1 Creating 
+ Container repo-cliente-1 Created 
+Attaching to cliente-1, gerador-1, proxy-1
+ Container repo-gerador-1 Starting 
+ Container repo-gerador-1 Started 
+ Container repo-gerador-1 Waiting 
+gerador-1  | 1795633097.361 INICIO n_features=120 n_nos=5 t_mudanca=15.0 passo_rollout=6.0 intervalo=3.0 t_rollback=60.0 seed=2025
+gerador-1  | 1795633097.364 PUBLICADO versao=1 n=120 no=0 tipo=bom
+ Container repo-gerador-1 Healthy 
+ Container repo-proxy-1 Starting 
+ Container repo-proxy-1 Started 
+ Container repo-proxy-1 Waiting 
+proxy-1    | 1795633100.233 INICIO limite=200 mitigacao=off poll=1.0
+proxy-1    | 1795633100.253 CARREGADO versao=1 n=120
+gerador-1  | 1795633100.385 PUBLICADO versao=2 n=120 no=4 tipo=bom
+proxy-1    | 1795633101.255 CARREGADO versao=2 n=120
+ Container repo-proxy-1 Healthy 
+ Container repo-cliente-1 Starting 
+ Container repo-cliente-1 Started 
+gerador-1  | 1795633103.399 PUBLICADO versao=3 n=120 no=0 tipo=bom
+proxy-1    | 1795633104.263 CARREGADO versao=3 n=120
+gerador-1  | 1795633106.411 PUBLICADO versao=4 n=120 no=3 tipo=bom
+proxy-1    | 1795633107.269 CARREGADO versao=4 n=120
+gerador-1  | 1795633109.429 PUBLICADO versao=5 n=120 no=1 tipo=bom
+proxy-1    | 1795633110.277 CARREGADO versao=5 n=120
+gerador-1  | 1795633112.390 MUDANCA_INICIADA t=15.0
+gerador-1  | 1795633112.390 NO_ATUALIZADO no=0 atualizados=1/5
+gerador-1  | 1795633112.440 PUBLICADO versao=6 n=120 no=4 tipo=bom
+proxy-1    | 1795633113.283 CARREGADO versao=6 n=120
+gerador-1  | 1795633115.454 PUBLICADO versao=7 n=240 no=0 tipo=ruim
+proxy-1    | 1795633116.289 PANICO versao=7 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633118.418 NO_ATUALIZADO no=1 atualizados=2/5
+gerador-1  | 1795633118.469 PUBLICADO versao=8 n=120 no=2 tipo=bom
+proxy-1    | 1795633119.297 CARREGADO versao=8 n=120
+gerador-1  | 1795633121.479 PUBLICADO versao=9 n=120 no=3 tipo=bom
+proxy-1    | 1795633122.305 CARREGADO versao=9 n=120
+gerador-1  | 1795633124.439 NO_ATUALIZADO no=2 atualizados=3/5
+gerador-1  | 1795633124.490 PUBLICADO versao=10 n=120 no=4 tipo=bom
+proxy-1    | 1795633125.313 CARREGADO versao=10 n=120
+gerador-1  | 1795633127.503 PUBLICADO versao=11 n=240 no=1 tipo=ruim
+proxy-1    | 1795633128.321 PANICO versao=11 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633130.466 NO_ATUALIZADO no=3 atualizados=4/5
+gerador-1  | 1795633130.517 PUBLICADO versao=12 n=240 no=0 tipo=ruim
+proxy-1    | 1795633131.329 PANICO versao=12 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633133.542 PUBLICADO versao=13 n=240 no=3 tipo=ruim
+proxy-1    | 1795633134.338 PANICO versao=13 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633136.502 NO_ATUALIZADO no=4 atualizados=5/5
+gerador-1  | 1795633136.553 PUBLICADO versao=14 n=240 no=3 tipo=ruim
+proxy-1    | 1795633137.350 PANICO versao=14 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633139.572 PUBLICADO versao=15 n=240 no=0 tipo=ruim
+proxy-1    | 1795633140.361 PANICO versao=15 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633142.586 PUBLICADO versao=16 n=240 no=0 tipo=ruim
+proxy-1    | 1795633143.371 PANICO versao=16 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633145.609 PUBLICADO versao=17 n=240 no=0 tipo=ruim
+proxy-1    | 1795633146.390 PANICO versao=17 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633148.619 PUBLICADO versao=18 n=240 no=1 tipo=ruim
+proxy-1    | 1795633149.398 PANICO versao=18 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633151.633 PUBLICADO versao=19 n=240 no=3 tipo=ruim
+proxy-1    | 1795633152.406 PANICO versao=19 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633154.648 PUBLICADO versao=20 n=240 no=0 tipo=ruim
+proxy-1    | 1795633155.414 PANICO versao=20 n=240 limite=200 erro=IndexError_alem_do_limite_pre_alocado
+gerador-1  | 1795633157.409 PUBLICADO versao=21 n=120 no=- tipo=bom motivo=rollback
+gerador-1  | 1795633157.409 ROLLBACK t=60.0
+gerador-1  | 1795633157.409 GERACAO_PARADA
+proxy-1    | 1795633157.418 CARREGADO versao=21 n=120
+cliente-1  | cliente terminou: /logs/cliente.csv
+[Kcliente-1 exited with code 0
+ Compose Stopping Aborting on container exit...
+ Container repo-cliente-1 Stopping 
+ Container repo-cliente-1 Stopped 
+ Container repo-proxy-1 Stopping 
+ Container repo-proxy-1 Stopped 
+ Container repo-gerador-1 Stopping 
+[Kproxy-1 exited with code 137
+ Container repo-gerador-1 Stopped 
+[Kgerador-1 exited with code 137
