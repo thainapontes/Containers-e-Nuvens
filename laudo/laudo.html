@@ -23,6 +23,8 @@
   .fig { text-align: center; margin: 4pt 0 6pt; break-inside: avoid; }
   .cap { font-size: 8.5pt; color: var(--muted); text-align: center; margin-top: 2pt; }
   .src { color: var(--muted); font-size: 8.3pt; }
+  a { color: inherit; text-decoration: none; }
+  a code { text-decoration: underline; text-decoration-color: #9aa4ae; }
 </style>
 </head>
 <body>
@@ -199,13 +201,14 @@ quanto tempo ele dura.</p>
 <p><b>Isso pode acontecer com o nosso projeto?</b> Sim, em escala menor. O projeto da equipe é o
 <code>Marketplace-da-economia-criativa</code> (Origem: API Express, worker de fila assíncrona e
 PostgreSQL 16 no Docker Compose; https://github.com/thainapontes/Marketplace-da-economia-criativa).
+Os links abaixo apontam para o commit <code>9660298</code>, que foi o testado; as linhas mudam em versões posteriores.
 Ele lê limites numéricos do ambiente e os aplica sem validar o formato. Também não há nada que
 perceba quando o worker para de trabalhar mas continua vivo. É a mesma combinação do incidente: uma
 entrada interna tratada como confiável e um processo que falha sem parecer que falhou.</p>
 
-<p><b>Onde:</b> <code>backend/src/worker.js</code>, linha 36 (commit <code>9660298</code>). O valor
+<p><b>Onde:</b> <a href="https://github.com/thainapontes/Marketplace-da-economia-criativa/blob/9660298/backend/src/worker.js#L36"><code>backend/src/worker.js</code></a>, linha 36 (commit <code>9660298</code>). O valor
 vai para o <code>LIMIT $1</code> da consulta que reserva jobs
-(<code>backend/src/repositories/fila.repository.js</code>, linha 109), chamada na linha 110 do worker:</p>
+(<a href="https://github.com/thainapontes/Marketplace-da-economia-criativa/blob/9660298/backend/src/repositories/fila.repository.js#L109"><code>backend/src/repositories/fila.repository.js</code></a>, linha 109), chamada na <a href="https://github.com/thainapontes/Marketplace-da-economia-criativa/blob/9660298/backend/src/worker.js#L110"><code>linha 110</code></a> do worker:</p>
 <pre>// worker.js:36
 const LOTE = Number(process.env.LOTE ?? 5);
 // worker.js:110
@@ -219,7 +222,7 @@ não morre, e os 3 jobs continuam <code>pendente</code> depois de 8 s. Com <code
 banco, os 3 jobs ficam <code>processado</code> em menos de 1 s. Como no FL2 da Cloudflare, um valor de
 configuração fora do formato não é rejeitado na entrada, mas no ponto de uso, e repete o erro a cada ciclo.
 Como no FL antigo, a falha é silenciosa: a API continua confirmando pedidos, que enfileiram a notificação
-(<code>backend/src/repositories/pedido.repository.js</code>, linha 120), mas as notificações de compra nunca saem. O mesmo padrão aparece em <code>backend/src/config/env.js</code>, linha 13
+(<a href="https://github.com/thainapontes/Marketplace-da-economia-criativa/blob/9660298/backend/src/repositories/pedido.repository.js#L120"><code>backend/src/repositories/pedido.repository.js</code></a>, linha 120), mas as notificações de compra nunca saem. O mesmo padrão aparece em <a href="https://github.com/thainapontes/Marketplace-da-economia-criativa/blob/9660298/backend/src/config/env.js#L13"><code>backend/src/config/env.js</code></a>, linha 13
 (<code>porta: Number(process.env.PORT ?? 3333)</code>). Testamos o <code>env.js</code> real
 (<code>logs/parte_d/teste_port_env.txt</code>): <code>PORT='3333abc'</code> e <code>PORT='70000'</code> derrubam
 a API com <code>ERR_SOCKET_BAD_PORT</code>, e <code>PORT=''</code> vira <code>porta = 0</code>: a API sobe numa
