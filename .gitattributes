@@ -1,0 +1,12 @@
+# Força LF nos arquivos de texto, mesmo em clones no Windows com core.autocrlf=true.
+# Um rodar.sh com CRLF falha no Bash ("set: pipefail: invalid option name").
+*.sh    text eol=lf
+*.py    text eol=lf
+*.yml   text eol=lf
+*.md    text eol=lf
+*.html  text eol=lf
+*.mjs   text eol=lf
+*.txt   text eol=lf
+*.csv   text eol=lf
+*.log   text eol=lf
+*.pdf   binary
